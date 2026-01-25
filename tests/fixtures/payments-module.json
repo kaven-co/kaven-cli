@@ -1,0 +1,62 @@
+{
+  "name": "payments",
+  "version": "1.0.0",
+  "description": "Payment processing with Stripe, PIX, and Paddle",
+  "author": "Kaven",
+  "license": "Proprietary",
+  "dependencies": {
+    "npm": ["stripe@^14.0.0", "@stripe/stripe-js@^2.0.0"],
+    "peerModules": [],
+    "kavenVersion": ">=0.1.0"
+  },
+  "files": {
+    "backend": [
+      {
+        "source": "api/**/*",
+        "dest": "apps/api/src/modules/payments/"
+      }
+    ],
+    "frontend": [
+      {
+        "source": "ui/**/*",
+        "dest": "apps/admin/components/payments/"
+      }
+    ],
+    "database": [
+      {
+        "source": "schema.prisma",
+        "dest": "packages/database/prisma/modules/payments.prisma"
+      }
+    ]
+  },
+  "injections": [
+    {
+      "file": "apps/api/src/index.ts",
+      "anchor": "// [ANCHOR:ROUTES]",
+      "moduleName": "payments-routes",
+      "code": "import { paymentsRouter } from './modules/payments';\nfastify.register(paymentsRouter, { prefix: '/api/payments' });"
+    },
+    {
+      "file": "apps/admin/app/layout.tsx",
+      "anchor": "// [ANCHOR:NAV_ITEMS]",
+      "moduleName": "payments-nav",
+      "code": "{ name: 'Payments', href: '/payments', icon: CreditCardIcon },"
+    }
+  ],
+  "scripts": {
+    "postInstall": "pnpm db:generate && pnpm db:migrate",
+    "preRemove": null
+  },
+  "env": [
+    {
+      "key": "STRIPE_SECRET_KEY",
+      "required": true,
+      "example": "sk_test_..."
+    },
+    {
+      "key": "STRIPE_WEBHOOK_SECRET",
+      "required": true,
+      "example": "whsec_..."
+    }
+  ]
+}
