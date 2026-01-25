@@ -7,6 +7,7 @@ import { authLogout } from "./commands/auth/logout";
 import { authWhoami } from "./commands/auth/whoami";
 import { marketplaceList } from "./commands/marketplace/list";
 import { marketplaceInstall } from "./commands/marketplace/install";
+import { telemetryView } from "./commands/telemetry/view";
 
 export const main = () => {
   const program = new Command();
@@ -79,6 +80,19 @@ export const main = () => {
     .command("install <moduleId>")
     .description("Install a module from the marketplace")
     .action((moduleId) => marketplaceInstall(moduleId));
+
+  /**
+   * Telemetry Group
+   */
+  const telemetryCommand = program
+    .command("telemetry")
+    .description("Telemetry and observability commands");
+
+  telemetryCommand
+    .command("view")
+    .description("View recent telemetry events")
+    .option("-l, --limit <number>", "Number of events to show", "10")
+    .action((options) => telemetryView(parseInt(options.limit)));
 
   program.parse();
 };

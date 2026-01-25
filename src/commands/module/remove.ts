@@ -3,20 +3,23 @@ import ora from "ora";
 import path from "path";
 import fs from "fs-extra";
 import { ModuleInstaller } from "../../core/ModuleInstaller";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
 import { MarkerService } from "../../core/MarkerService";
 
-export async function moduleRemove(
-  moduleName: string,
-  projectRoot: string = process.cwd(),
-): Promise<void> {
+export async function moduleRemove(moduleName: string, projectRoot?: string): Promise<void> {
+  const telemetry = TelemetryBuffer.getInstance();
+  const startTime = Date.now();
+  telemetry.capture("cli.module.remove.start", { moduleName });
+
+  const root = projectRoot || process.cwd();
   const spinner = ora(`Removendo módulo ${moduleName}...`).start();
 
   try {
     const markerService = new MarkerService();
-    const installer = new ModuleInstaller(projectRoot, markerService);
+    const installer = new ModuleInstaller(root, markerService);
 
     // 1. Verificar se o módulo está na config
-    const configPath = path.join(projectRoot, "kaven.json");
+    const configPath = path.join(root, "kaven.json");
     if (!(await fs.pathExists(configPath))) {
       throw new Error(
         "Arquivo kaven.json não encontrado. Este é um projeto Kaven?",
@@ -30,7 +33,7 @@ export async function moduleRemove(
 
     // 2. Carregar manifest do cache
     const manifestPath = path.join(
-      projectRoot,
+      root,
       ".kaven",
       "modules",
       moduleName,
@@ -56,11 +59,18 @@ export async function moduleRemove(
     // 5. Limpar cache do manifest
     await fs.remove(path.dirname(manifestPath));
 
-    spinner.succeed(chalk.green(`Módulo ${moduleName} removido com sucesso!`));
+    ora().succeed(chalk.green(`Módulo ${moduleName} removido com sucesso!`));
+
+    telemetry.capture("cli.module.remove.success", { moduleName }, Date.now() - startTime);
+    await telemetry.flush();
   } catch (error) {
+    telemetry.capture("cli.module.remove.error", { error: (error as Error).message }, Date.now() - startTime);
+    await telemetry.flush();
+
+    ora().fail(chalk.red(`Falha ao remover módulo ${moduleName}:`));
     spinner.fail(
       chalk.red(
-        `Falha na remoção: ${error instanceof Error ? error.message : String(error)}`,
+        `${error instanceof Error ? error.message : String(error)}`,
       ),
     );
     process.exit(1);

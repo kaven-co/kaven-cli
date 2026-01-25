@@ -1,8 +1,13 @@
 import chalk from "chalk";
 import ora from "ora";
 import { AuthService } from "../../core/AuthService";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
 
 export async function authLogin(): Promise<void> {
+  const telemetry = TelemetryBuffer.getInstance();
+  const startTime = Date.now();
+  telemetry.capture("cli.auth.login.start");
+
   const authService = new AuthService();
   
   console.log(chalk.blue("🔐 Iniciando fluxo de autenticação...\n"));
@@ -34,7 +39,13 @@ export async function authLogin(): Promise<void> {
 
     pollSpinner.succeed(chalk.green("Autenticação realizada com sucesso!"));
     console.log(chalk.gray("\nSeu token foi salvo com segurança em ~/.kaven/auth.json"));
+
+    telemetry.capture("cli.auth.login.success", {}, Date.now() - startTime);
+    await telemetry.flush();
   } catch (error) {
+    telemetry.capture("cli.auth.login.error", { error: (error as Error).message }, Date.now() - startTime);
+    await telemetry.flush();
+
     spinner.fail(chalk.red("Erro ao realizar login."));
     console.error(error);
     process.exit(1);

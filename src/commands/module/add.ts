@@ -5,22 +5,28 @@ import fs from "fs-extra";
 import { ModuleInstaller } from "../../core/ModuleInstaller";
 import { MarkerService } from "../../core/MarkerService";
 import { ManifestParser } from "../../core/ManifestParser";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
 
 export async function moduleAdd(
   manifestPath: string,
-  projectRoot: string = process.cwd(),
+  projectRoot?: string,
 ): Promise<void> {
+  const telemetry = TelemetryBuffer.getInstance();
+  const startTime = Date.now();
+  telemetry.capture("cli.module.add.start", { manifestPath });
+
+  const root = projectRoot || process.cwd();
   const spinner = ora("Preparando instalação do módulo...").start();
 
   try {
     const markerService = new MarkerService();
     const manifestParser = new ManifestParser();
-    const installer = new ModuleInstaller(projectRoot, markerService);
+    const installer = new ModuleInstaller(root, markerService);
 
     // 1. Resolver caminho do manifest
     const absolutePath = path.isAbsolute(manifestPath)
       ? manifestPath
-      : path.join(projectRoot, manifestPath);
+      : path.join(root, manifestPath);
 
     if (!(await fs.pathExists(absolutePath))) {
       throw new Error(`Arquivo de manifest não encontrado: ${manifestPath}`);
@@ -36,12 +42,12 @@ export async function moduleAdd(
 
     // 4. Atualizar kaven.json
     spinner.text = "Atualizando configuração do projeto...";
-    await updateKavenConfig(projectRoot, manifest.name, manifest.version);
+    await updateKavenConfig(root, manifest.name, manifest.version);
 
     // 5. Cache do manifest para desinstalação futura
     spinner.text = "Salvando cache do manifest...";
     const cacheDir = path.join(
-      projectRoot,
+      root,
       ".kaven",
       "modules",
       manifest.name,
@@ -54,7 +60,13 @@ export async function moduleAdd(
     spinner.succeed(
       chalk.green(`Módulo ${manifest.name} instalado com sucesso!`),
     );
+    
+    telemetry.capture("cli.module.add.success", { name: manifest.name }, Date.now() - startTime);
+    await telemetry.flush();
   } catch (error) {
+    telemetry.capture("cli.module.add.error", { error: (error as Error).message }, Date.now() - startTime);
+    await telemetry.flush();
+    
     spinner.fail(
       chalk.red(
         `Falha na instalação: ${error instanceof Error ? error.message : String(error)}`,

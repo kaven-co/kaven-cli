@@ -6,8 +6,13 @@ import os from "os";
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
 import { AuthService } from "../../core/AuthService";
 import { moduleAdd } from "../module/add";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
 
 export async function marketplaceInstall(moduleId: string): Promise<void> {
+  const telemetry = TelemetryBuffer.getInstance();
+  const startTime = Date.now();
+  telemetry.capture("cli.marketplace.install.start", { moduleId });
+
   const authService = new AuthService();
   const client = new MarketplaceClient();
 
@@ -45,7 +50,13 @@ export async function marketplaceInstall(moduleId: string): Promise<void> {
 
     // 5. Cleanup
     await fs.remove(tempDir);
+
+    telemetry.capture("cli.marketplace.install.success", { moduleId }, Date.now() - startTime);
+    await telemetry.flush();
   } catch (error) {
+    telemetry.capture("cli.marketplace.install.error", { moduleId, error: (error as Error).message }, Date.now() - startTime);
+    await telemetry.flush();
+
     spinner.fail(chalk.red(`Falha na instalação do módulo '${moduleId}'.`));
     console.error(error);
     process.exit(1);
