@@ -1,6 +1,9 @@
 ---
-trigger: model_decision
-description: Aplicar esta regra quando houver mudanças de dependências, segurança, CI/CD ou quando realizar varreduras (Snyk/OSV). Exigir evidência de scan e correção sem gambiarra.
+alwaysApply: true
+always_on: true
+trigger: always_on
+applyTo: "**"
+description: Snyk Security At Inception
 ---
 
 # Project security best practices

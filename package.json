@@ -8,17 +8,34 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "quality": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "quality:gate": "./.agent/scripts/quality-gate.sh",
+    "bootstrap": "./.agent/scripts/bootstrap.sh",
+    "evidence": "./.agent/scripts/evidence-bundle.sh",
+    "validate:evidence": "./.agent/scripts/validate-evidence.sh",
+    "create:pr": "./.agent/scripts/create-pr.sh",
+    "telemetry:view": "tail -f ~/.kaven/telemetry.log",
+    "telemetry:clear": "rm -f ~/.kaven/telemetry.log && touch ~/.kaven/telemetry.log"
   },
   "keywords": [
     "kaven",
     "cli",
-    "developer-tools"
+    "developer-tools",
+    "saas",
+    "boilerplate"
   ],
   "author": "Kaven",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KavenCompany/kaven-cli"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.53.1",
@@ -28,6 +45,6 @@
     "vitest": "^1.0.0"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }
