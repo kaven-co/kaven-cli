@@ -2,27 +2,36 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
+
+# SECURITY: Explicit minimal permissions (principle of least privilege)
+# See: https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+permissions:
+  contents: read # Read repo contents
+  pull-requests: write # Comment on PRs (optional, for test results)
 
 jobs:
-  build:
+  quality-gates:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x] # Test only on Node 20 (production version)
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false # Don't persist GITHUB_TOKEN
 
-      - name: Install pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 9
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -32,13 +41,30 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm run lint
 
       - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Build
-        run: pnpm build
+        run: pnpm run typecheck
 
       - name: Test
-        run: pnpm test
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+
+      # SECURITY: Verify commit signatures (if enabled)
+      - name: Verify commit signatures
+        if: github.event_name == 'pull_request'
+        run: |
+          git log origin/${{ github.base_ref }}..HEAD --format="%H %G?" | while read commit sig; do
+            if [ "$sig" != "G" ]; then
+              echo "❌ Unsigned commit: $commit"
+              exit 1
+            fi
+          done
+        continue-on-error: true # Don't fail CI if unsigned (warn only)
+
+      # Optional: Upload coverage to codecov
+      # - name: Upload coverage
+      #   uses: codecov/codecov-action@v3
+      #   if: success()
