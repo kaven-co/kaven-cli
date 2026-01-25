@@ -1,3 +1,4 @@
 export default {
-  architecture: "Architecture"
+  architecture: "Architecture",
+  platform: "Platform"
 }
