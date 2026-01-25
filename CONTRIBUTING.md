@@ -1,45 +1,56 @@
-# Contributing to Kaven CLI
+# Contribuindo para a Kaven CLI
 
-Thank you for your interest in contributing to Kaven CLI!
+Obrigado por se interessar em contribuir para a Kaven CLI! Este documento contém as diretrizes necessárias para manter a qualidade e consistência do projeto.
 
-## Code of Conduct
+## 🏗️ Estrutura do Projeto
 
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+- `src/commands/`: Implementação dos comandos CLI (Commander.js).
+- `src/core/`: Lógica de negócio principal (Services, Instaladores, Parsers).
+- `src/infrastructure/`: Integrações externas e utilitários (Container, FS Transacional, Telemetry).
+- `src/types/`: Definições de tipos TypeScript e schemas Zod.
+- `tests/`: Suíte de testes (Vitest).
 
-## Getting Started
+## 🛠️ Setup de Desenvolvimento
 
-1. **Fork** the repository.
-2. **Clone** your fork locally.
-3. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-4. Create a new branch:
-   ```bash
-   git checkout -b feat/my-feature
-   ```
+```bash
+# Clone o repositório
+git clone https://github.com/KavenCompany/kaven-cli.git
 
-## Workflow & Gates
+# Instale as dependências
+pnpm install
 
-All Pull Requests must pass the following checks before merging:
+# Build em modo watch
+pnpm run build --watch
+```
 
-- **Lint**: `pnpm lint`
-- **Typecheck**: `pnpm typecheck`
-- **Tests**: `pnpm test`
-- **Build**: `pnpm build`
+## 🧪 Qualidade e Testes
 
-Failed checks will block the merge.
+Antes de enviar qualquer alteração, garanta que ela passe em todos os Quality Gates:
 
-## Commits
+```bash
+pnpm run quality
+```
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/).
+Este comando executa:
 
-Examples:
+1. **Lint**: Padrões de código ESLint.
+2. **Typecheck**: Validação de tipos TypeScript.
+3. **Tests**: Suíte completa de testes unitários e de integração.
 
-- `feat: add new module command`
-- `fix: resolve crash on login`
-- `docs: update README`
+## 📝 Convenção de Commits
 
-## Reporting Issues
+Utilizamos [Conventional Commits](https://www.conventionalcommits.org/):
 
-Use the [Issue Templates](.github/ISSUE_TEMPLATE) to report bugs or request features.
+- `feat:` Novos comandos ou funcionalidades.
+- `fix:` Correções de bugs.
+- `docs:` Alterações em documentação.
+- `test:` Adição ou correção de testes.
+- `refactor:` Melhorias no código sem alterar comportamento.
+
+## 🚀 Fluxo de Pull Request
+
+1. Crie uma branch a partir da `main`.
+2. Implemente sua mudança com os testes correspondentes.
+3. Garanta 100% de sucesso no `pnpm run quality`.
+4. Gere o bundle de evidências: `pnpm run evidence`.
+5. Abra o PR anexando as evidências geradas em `.agent/artifacts/evidence/`.

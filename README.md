@@ -1,45 +1,71 @@
-# Kaven CLI
+# Kaven CLI 🚀
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha.0-orange.svg)](https://semver.org)
+A ferramenta de linha de comando oficial para o ecossistema Kaven. Projetada para ser robusta, idempotente e extensível.
 
-The official command-line interface for **Kaven**.
+## 📦 Instalação
 
-> **Note**: This project is currently in **Alpha** status. APIs and commands are subject to change.
-
-## 🚀 Quickstart
+No momento, a CLI está em fase alpha. Você pode instalá-la globalmente usando npm ou pnpm:
 
 ```bash
-# Install via npm/pnpm/yarn
-npm install -g kaven-cli
-
-# Login to your Kaven account
-kaven login
-
-# Initialize a new project
-kaven init
+npm install -g kaven-cli@alpha
+# ou
+pnpm add -g kaven-cli@alpha
 ```
 
-## 📦 Installation
-
-To install the latest alpha version:
+## 🚀 Início Rápido
 
 ```bash
-npm install -g kaven-cli@next
+# 1. Autenticação
+kaven auth login
+
+# 2. Explorar Módulos
+kaven marketplace list
+
+# 3. Instalar um Módulo
+kaven marketplace install stripe-payments
+
+# 4. Verificar Saúde do Projeto
+kaven module doctor
+
+# 5. Ver Telemetria Local
+kaven telemetry view
 ```
 
-## 🛠 Usage
+## 🛠️ Comandos
 
-Run `kaven --help` to see all available commands.
+### Módulos (`module`, `m`)
 
-```bash
-kaven [command] [options]
-```
+Gerenciamento local de módulos e integridade do projeto.
 
-## 🤝 Contributing
+- `kaven module add <manifest>`: Adiciona um módulo localmente via arquivo de manifest.
+- `kaven module remove <name>`: Remove um módulo e limpa as injeções de código.
+- `kaven module doctor`: Verifica a integridade dos markers, âncoras e dependências.
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+### Autenticação (`auth`)
 
-## 📄 License
+Gerenciamento de sessão e tokens.
 
-This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
+- `kaven auth login`: Inicia o fluxo de autenticação (Device Flow).
+- `kaven auth logout`: Remove as credenciais locais.
+- `kaven auth whoami`: Exibe informações do usuário atual.
+
+### Marketplace (`marketplace`, `mkt`, `market`)
+
+Descoberta e instalação de módulos oficiais.
+
+- `kaven marketplace list`: Lista todos os módulos disponíveis na nuvem Kaven.
+- `kaven marketplace install <id>`: Baixa e instala um módulo automaticamente.
+
+### Telemetria (`telemetry`)
+
+Observabilidade e auditoria local.
+
+- `kaven telemetry view`: Exibe os últimos eventos registrados localmente.
+
+## 🧪 Desenvolvimento
+
+Consulte o guia [CONTRIBUTING.md](./CONTRIBUTING.md) para detalhes sobre como configurar o ambiente de desenvolvimento, rodar testes e contribuir com o projeto.
+
+## 📄 Licença
+
+Proprietário - Copyright © 2026 Kaven.

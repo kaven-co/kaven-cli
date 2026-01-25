@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Command } from "commander";
 import { moduleDoctor } from "./commands/module/doctor";
 import { moduleAdd } from "./commands/module/add";
@@ -14,30 +15,31 @@ export const main = () => {
 
   program
     .name("kaven")
-    .description("Kaven CLI - The official command line tool for Kaven")
-    .version("0.1.0-alpha.0");
+    .description("CLI oficial para o ecossistema Kaven")
+    .version("0.1.0-alpha.1");
 
   /**
    * Modules Group
    */
   const moduleCommand = program
     .command("module")
-    .description("Module management commands");
+    .alias("m")
+    .description("Gerenciamento de módulos e integridade");
 
   moduleCommand
     .command("doctor")
-    .description("Check module health")
+    .description("Verifica integridade do projeto e dos módulos instalados")
     .option("--fix", "Attempt to fix issues")
     .action((options) => moduleDoctor(options));
 
   moduleCommand
-    .command("add <manifest>")
-    .description("Add a module to the project")
-    .action((manifest) => moduleAdd(manifest));
+    .command("add <path>")
+    .description("Instala um módulo a partir de um manifest local")
+    .action((path) => moduleAdd(path));
 
   moduleCommand
     .command("remove <name>")
-    .description("Remove a module from the project")
+    .description("Remove um módulo e limpa injeções de código")
     .action((name) => moduleRemove(name));
 
   /**
@@ -45,21 +47,21 @@ export const main = () => {
    */
   const authCommand = program
     .command("auth")
-    .description("Authentication commands");
+    .description("Autenticação e gerenciamento de sessão");
 
   authCommand
     .command("login")
-    .description("Log in to Kaven Cloud")
+    .description("Inicia o fluxo de login interativo")
     .action(() => authLogin());
 
   authCommand
     .command("logout")
-    .description("Log out from Kaven Cloud")
+    .description("Encerra a sessão local")
     .action(() => authLogout());
 
   authCommand
     .command("whoami")
-    .description("Check current login status")
+    .description("Exibe informações do usuário autenticado")
     .action(() => authWhoami());
 
   /**
@@ -69,16 +71,16 @@ export const main = () => {
     .command("marketplace")
     .alias("mkt")
     .alias("market")
-    .description("Kaven Marketplace commands");
+    .description("Explorar e instalar módulos do Marketplace oficial");
 
   marketplaceCommand
     .command("list")
-    .description("List available modules in the marketplace")
+    .description("Lista todos os módulos disponíveis no marketplace")
     .action(() => marketplaceList());
 
   marketplaceCommand
     .command("install <moduleId>")
-    .description("Install a module from the marketplace")
+    .description("Baixa e instala um módulo via Marketplace")
     .action((moduleId) => marketplaceInstall(moduleId));
 
   /**
@@ -86,12 +88,12 @@ export const main = () => {
    */
   const telemetryCommand = program
     .command("telemetry")
-    .description("Telemetry and observability commands");
+    .description("Observabilidade e auditoria de comandos");
 
   telemetryCommand
     .command("view")
-    .description("View recent telemetry events")
-    .option("-l, --limit <number>", "Number of events to show", "10")
+    .description("Visualiza os últimos eventos de telemetria locais")
+    .option("-l, --limit <number>", "Número de eventos a exibir", "10")
     .action((options) => telemetryView(parseInt(options.limit)));
 
   program.parse();

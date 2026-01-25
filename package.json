@@ -1,13 +1,18 @@
 {
   "name": "kaven-cli",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Kaven CLI - The official command line tool for Kaven",
   "main": "dist/index.js",
   "bin": {
     "kaven": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "pnpm run build && pnpm run quality",
     "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "test": "vitest run",
