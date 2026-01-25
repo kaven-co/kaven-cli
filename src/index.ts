@@ -5,6 +5,8 @@ import { moduleRemove } from "./commands/module/remove";
 import { authLogin } from "./commands/auth/login";
 import { authLogout } from "./commands/auth/logout";
 import { authWhoami } from "./commands/auth/whoami";
+import { marketplaceList } from "./commands/marketplace/list";
+import { marketplaceInstall } from "./commands/marketplace/install";
 
 export const main = () => {
   const program = new Command();
@@ -58,6 +60,25 @@ export const main = () => {
     .command("whoami")
     .description("Check current login status")
     .action(() => authWhoami());
+
+  /**
+   * Marketplace Group
+   */
+  const marketplaceCommand = program
+    .command("marketplace")
+    .alias("mkt")
+    .alias("market")
+    .description("Kaven Marketplace commands");
+
+  marketplaceCommand
+    .command("list")
+    .description("List available modules in the marketplace")
+    .action(() => marketplaceList());
+
+  marketplaceCommand
+    .command("install <moduleId>")
+    .description("Install a module from the marketplace")
+    .action((moduleId) => marketplaceInstall(moduleId));
 
   program.parse();
 };

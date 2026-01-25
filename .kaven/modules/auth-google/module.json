@@ -1,0 +1,30 @@
+{
+  "name": "auth-google",
+  "version": "1.2.0",
+  "description": "Integração completa com Google OAuth2 e suporte a multiplataforma.",
+  "author": "Kaven Official",
+  "license": "Proprietary",
+  "dependencies": {
+    "npm": [],
+    "peerModules": [],
+    "kavenVersion": ">=0.1.0"
+  },
+  "files": {
+    "backend": [],
+    "frontend": [],
+    "database": []
+  },
+  "injections": [
+    {
+      "file": "kaven-setup.ts",
+      "anchor": "// KAVEN_INIT",
+      "code": "console.log(\"Module Google Auth initialized!\");",
+      "moduleName": "auth-google"
+    }
+  ],
+  "scripts": {
+    "postInstall": null,
+    "preRemove": null
+  },
+  "env": []
+}
