@@ -26,7 +26,9 @@ export class ModuleInstaller {
     const tx = new TransactionalFileSystem(this.projectRoot);
 
     try {
-      const filesToModify = Array.from(new Set(manifest.injections.map((inj) => inj.file)));
+      const filesToModify = Array.from(
+        new Set(manifest.injections.map((inj) => inj.file)),
+      );
       await tx.backup(filesToModify);
 
       for (const injection of manifest.injections) {
@@ -34,10 +36,36 @@ export class ModuleInstaller {
       }
 
       await tx.commit();
-      console.log(`✅ Module ${manifest.name} installed successfully`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error(`❌ Installation failed: ${errorMessage}`);
+      console.log(`🔄 Rolling back...`);
+      await tx.rollback();
+      throw error;
+    }
+  }
+
+  async uninstall(manifest: ModuleManifest): Promise<void> {
+    const tx = new TransactionalFileSystem(this.projectRoot);
+
+    try {
+      const filesToModify = Array.from(
+        new Set(manifest.injections.map((inj) => inj.file)),
+      );
+      await tx.backup(filesToModify);
+
+      // Na desinstalação, removemos por arquivo para evitar múltiplas tentativas
+      // de remover marcadores que o regex global já removeu.
+      for (const fileName of filesToModify) {
+        await this.removeCode(fileName, manifest.name);
+      }
+
+      await tx.commit();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(`❌ Removal failed: ${errorMessage}`);
       console.log(`🔄 Rolling back...`);
       await tx.rollback();
       throw error;
@@ -54,6 +82,15 @@ export class ModuleInstaller {
       injection.moduleName || "unnamed",
       injection.code,
     );
+
+    await fs.writeFile(filePath, updated);
+  }
+
+  private async removeCode(fileName: string, moduleName: string): Promise<void> {
+    const filePath = path.join(this.projectRoot, fileName);
+    const content = await fs.readFile(filePath, "utf-8");
+
+    const updated = this.markerService.removeModule(content, moduleName);
 
     await fs.writeFile(filePath, updated);
   }
