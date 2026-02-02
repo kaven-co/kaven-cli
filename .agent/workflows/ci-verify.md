@@ -1,38 +1,21 @@
 ---
-description: Quality gates do projeto. Usa comandos configurados em quality.env.
+description: Quality gates do projeto usando config local.
 ---
 
-Este workflow executa os quality gates configurados para este projeto.
-
-1. Carregue configuração
+1. Carregue config
    // turbo
    ```bash
+   source .agent/config/quality.env 2>/dev/null && echo "Config carregada"
+   ```
+
+2. Execute gates
+   ```bash
    source .agent/config/quality.env
-   echo "Lint: $AG_LINT_CMD"
-   echo "Type: $AG_TYPECHECK_CMD"
-   echo "Test: $AG_TEST_CMD"
+   $AG_LINT_CMD && $AG_TYPECHECK_CMD && $AG_TEST_CMD
    ```
 
-2. Execute lint
-   ```bash
-   source .agent/config/quality.env && $AG_LINT_CMD
-   ```
-
-3. Execute typecheck
-   ```bash
-   source .agent/config/quality.env && $AG_TYPECHECK_CMD
-   ```
-
-4. Execute testes
-   ```bash
-   source .agent/config/quality.env && $AG_TEST_CMD
-   ```
-
-5. Gere evidência
+3. Evidência
    // turbo
    ```bash
    git diff --stat
    ```
-
-6. Se falhou, use /g-retry-loop
-   Não ignore erros. Corrija antes de prosseguir.

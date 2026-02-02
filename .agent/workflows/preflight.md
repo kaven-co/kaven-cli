@@ -1,29 +1,20 @@
 ---
-description: Pré-voo específico do projeto. Inclui verificações locais além do global.
+description: Pré-voo do projeto. Verifica configs locais antes de implementar.
 ---
 
-Este workflow complementa `/g-preflight` com checks específicos do projeto.
+1. Execute preflight global
+   Use `/g-preflight` primeiro.
 
-1. Execute preflight global primeiro
-   Use `/g-preflight` para análise geral.
-
-2. Verifique configurações do projeto
+2. Verifique config do projeto
    // turbo
    ```bash
    cat .agent/config/quality.env
    ```
 
-3. Verifique dependências
+3. Verifique .env
    // turbo
    ```bash
-   pnpm outdated 2>/dev/null | head -10 || npm outdated 2>/dev/null | head -10
+   test -f .env && echo "✅ .env existe" || echo "⚠️ Copie .env.example para .env"
    ```
 
-4. Verifique .env configurado
-   // turbo
-   ```bash
-   test -f .env && echo ".env existe" || echo "⚠️ .env não existe - copie de .env.example"
-   ```
-
-5. Prossiga com implementação
-   Após checks, inicie o desenvolvimento.
+4. Prossiga com implementação
