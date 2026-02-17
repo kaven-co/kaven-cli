@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
+import { AuthTokens } from "../types/auth";
 
 export interface UserInfo {
   id: string;
@@ -15,19 +16,66 @@ export class AuthService {
     this.configPath = path.join(os.homedir(), ".kaven", "auth.json");
   }
 
-  async storeToken(token: string): Promise<void> {
+  /**
+   * Store complete auth tokens (new format for C1.1)
+   */
+  async saveTokens(tokens: AuthTokens): Promise<void> {
     const configDir = path.dirname(this.configPath);
     await fs.ensureDir(configDir);
 
-    // Salvar token em JSON
-    await fs.writeJson(this.configPath, { token }, { spaces: 2 });
+    // Save complete token object
+    await fs.writeJson(this.configPath, tokens, { spaces: 2 });
 
-    // Definir permissões restritas (0600 - leitura/escrita apenas pelo dono) no Linux
+    // Set restrictive permissions (0600 - owner read/write only) on Unix-like systems
     if (process.platform !== "win32") {
       await fs.chmod(this.configPath, 0o600);
     }
   }
 
+  /**
+   * Legacy method - kept for backwards compatibility
+   * @deprecated Use saveTokens() instead
+   */
+  async storeToken(token: string): Promise<void> {
+    const configDir = path.dirname(this.configPath);
+    await fs.ensureDir(configDir);
+
+    // Save token in legacy format
+    await fs.writeJson(this.configPath, { token }, { spaces: 2 });
+
+    // Set restrictive permissions
+    if (process.platform !== "win32") {
+      await fs.chmod(this.configPath, 0o600);
+    }
+  }
+
+  /**
+   * Get stored authentication data (new format)
+   */
+  async getAuth(): Promise<AuthTokens | null> {
+    if (!(await fs.pathExists(this.configPath))) {
+      return null;
+    }
+
+    try {
+      const data = await fs.readJson(this.configPath);
+
+      // Check if it's the new format (has access_token)
+      if (data.access_token) {
+        return data as AuthTokens;
+      }
+
+      // Legacy format - return null (force re-auth)
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Legacy method - kept for backwards compatibility
+   * @deprecated Use getAuth() instead
+   */
   async getToken(): Promise<string | null> {
     if (!(await fs.pathExists(this.configPath))) {
       return null;
@@ -35,6 +83,11 @@ export class AuthService {
 
     try {
       const data = await fs.readJson(this.configPath);
+      // Try new format first
+      if (data.access_token) {
+        return data.access_token;
+      }
+      // Fall back to legacy format
       return data.token || null;
     } catch {
       return null;
@@ -53,18 +106,16 @@ export class AuthService {
   }
 
   /**
-   * Mock decoding of JWT for now.
-   * In a real implementation, we would use a library like 'jsonwebtoken'.
+   * Get user info from stored auth data
    */
   async getUserInfo(): Promise<UserInfo | null> {
-    const token = await this.getToken();
-    if (!token) return null;
+    const auth = await this.getAuth();
+    if (!auth) return null;
 
-    // Simulate decoding (mocked)
     return {
-      id: "usr-mock-123",
-      email: "user@example.com",
-      name: "Kaven Explorador",
+      id: auth.user.githubId, // Use githubId as unique identifier
+      email: auth.user.email,
+      name: undefined, // Name not included in marketplace auth response
     };
   }
 }

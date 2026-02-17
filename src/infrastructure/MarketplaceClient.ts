@@ -1,4 +1,5 @@
 import { ModuleManifest } from "../types/manifest";
+import { DeviceCodeResponse, TokenPollResult, AuthTokens } from "../types/auth";
 
 export interface MarketplaceModule {
   id: string;
@@ -9,6 +10,7 @@ export interface MarketplaceModule {
 }
 
 export class MarketplaceClient {
+  private readonly baseURL: string;
   private readonly mockModules: MarketplaceModule[] = [
     {
       id: "auth-google",
@@ -32,6 +34,74 @@ export class MarketplaceClient {
       author: "Kaven Official",
     },
   ];
+
+  constructor() {
+    // Use environment variable or default to production
+    this.baseURL = process.env.MARKETPLACE_API_URL || 'https://marketplace.kaven.sh';
+  }
+
+  /**
+   * Step 1 of Device Code Flow: Request device code from marketplace
+   */
+  async requestDeviceCode(): Promise<DeviceCodeResponse> {
+    const response = await fetch(`${this.baseURL}/auth/device-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: 'kaven-cli' }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to request device code: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Step 2 of Device Code Flow: Poll for access token
+   */
+  async pollDeviceToken(deviceCode: string): Promise<TokenPollResult> {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_code: deviceCode,
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        }),
+      });
+
+      // Success - got tokens
+      if (response.ok) {
+        const tokens: AuthTokens = await response.json();
+        return { status: 'success', tokens };
+      }
+
+      // OAuth error response
+      const errorData = await response.json();
+      const errorCode = errorData.error || 'unknown_error';
+
+      switch (errorCode) {
+        case 'authorization_pending':
+          return { status: 'authorization_pending' };
+        case 'slow_down':
+          return { status: 'slow_down' };
+        case 'access_denied':
+          return { status: 'access_denied' };
+        case 'expired_token':
+          return { status: 'expired_token' };
+        default:
+          throw new Error(`Unexpected error: ${errorCode}`);
+      }
+    } catch (error) {
+      // Network errors
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === 'ECONNREFUSED' || nodeError.code === 'ENOTFOUND') {
+        throw new Error('Network error. Check your connection and try again.');
+      }
+      throw error;
+    }
+  }
 
   async listModules(): Promise<MarketplaceModule[]> {
     // Simular latência de rede
