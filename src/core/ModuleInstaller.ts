@@ -1,7 +1,9 @@
 import { TransactionalFileSystem } from "../infrastructure/TransactionalFileSystem";
 import { MarkerService } from "./MarkerService";
+import { ScriptRunner } from "./ScriptRunner.js";
 import fs from "fs-extra";
 import path from "path";
+import chalk from "chalk";
 
 export interface Injection {
   file: string;
@@ -16,13 +18,70 @@ export interface ModuleManifest {
   injections: Injection[];
 }
 
+interface ModuleJson {
+  scripts?: {
+    postInstall?: Array<{ command: string; args?: string[] }>;
+    preRemove?: Array<{ command: string; args?: string[] }>;
+  };
+  env?: Array<{ key: string; required?: boolean; example?: string }>;
+  [key: string]: unknown;
+}
+
+export interface ModuleInstallerOptions {
+  envFile?: string;
+  skipEnv?: boolean;
+  yes?: boolean;
+  force?: boolean;
+}
+
 export class ModuleInstaller {
   constructor(
     private projectRoot: string,
     private markerService: MarkerService,
   ) {}
 
-  async install(manifest: ModuleManifest): Promise<void> {
+  /**
+   * Check whether the given module slug is already installed by scanning
+   * project files for its begin/end markers.
+   */
+  async isModuleInstalled(moduleName: string): Promise<boolean> {
+    try {
+      const filesToCheck = await this.findProjectFiles();
+      for (const filePath of filesToCheck) {
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          if (this.markerService.hasModule(content, moduleName)) {
+            return true;
+          }
+        } catch {
+          // Skip unreadable files
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Find text-based project source files to check for markers. */
+  private async findProjectFiles(): Promise<string[]> {
+    const { glob } = await import("glob");
+    const patterns = ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
+    const ignore = ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/build/**"];
+
+    const files: string[] = [];
+    for (const pattern of patterns) {
+      const found = await glob(pattern, {
+        cwd: this.projectRoot,
+        absolute: true,
+        ignore,
+      });
+      files.push(...found);
+    }
+    return [...new Set(files)];
+  }
+
+  async install(manifest: ModuleManifest, options?: ModuleInstallerOptions): Promise<void> {
     const tx = new TransactionalFileSystem(this.projectRoot);
 
     try {
@@ -36,6 +95,41 @@ export class ModuleInstaller {
       }
 
       await tx.commit();
+
+      // Run postInstall lifecycle scripts if defined in module.json
+      const moduleJson = await this.readManifest(this.projectRoot);
+      if (moduleJson?.scripts?.postInstall?.length) {
+        const runner = new ScriptRunner();
+        try {
+          await runner.runScripts(
+            moduleJson.scripts.postInstall.map((s: { command: string; args?: string[] }) => ({ ...s, cwd: this.projectRoot })),
+            'postInstall',
+            false
+          );
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.warn(chalk.yellow(`
+  ⚠ PostInstall script failed: ${errMsg}`));
+          console.warn(chalk.dim('  The module is installed. Run the script manually if needed.'));
+        }
+      }
+
+      // Inject environment variables if defined in module.json
+      if (!options?.skipEnv && moduleJson?.env?.length) {
+        const { EnvManager } = await import('./EnvManager.js');
+        const envManager = new EnvManager();
+        const envVarDefs = moduleJson.env.map((e) => ({
+          name: e.key,
+          description: e.example ?? e.key,
+          required: e.required ?? false,
+        }));
+        await envManager.injectEnvVars(manifest.name, envVarDefs, {
+          projectDir: this.projectRoot,
+          envFile: options?.envFile,
+          skipEnv: options?.skipEnv,
+          skipConfirmation: options?.yes,
+        });
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -46,7 +140,7 @@ export class ModuleInstaller {
     }
   }
 
-  async uninstall(manifest: ModuleManifest): Promise<void> {
+  async uninstall(manifest: ModuleManifest, options?: ModuleInstallerOptions): Promise<void> {
     const tx = new TransactionalFileSystem(this.projectRoot);
 
     try {
@@ -54,6 +148,31 @@ export class ModuleInstaller {
         new Set(manifest.injections.map((inj) => inj.file)),
       );
       await tx.backup(filesToModify);
+
+      // Remove environment variables before removing files
+      const { EnvManager } = await import('./EnvManager.js');
+      const envManager = new EnvManager();
+      envManager.removeEnvVars(manifest.name, {
+        projectDir: this.projectRoot,
+        skipEnv: options?.skipEnv,
+      });
+
+      // Run preRemove lifecycle scripts if defined in module.json
+      const moduleJson = await this.readManifest(this.projectRoot);
+      if (moduleJson?.scripts?.preRemove?.length) {
+        const runner = new ScriptRunner();
+        try {
+          await runner.runScripts(
+            moduleJson.scripts.preRemove.map((s: { command: string; args?: string[] }) => ({ ...s, cwd: this.projectRoot })),
+            'preRemove',
+            false
+          );
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.warn(chalk.yellow(`
+  ⚠ PreRemove script failed: ${errMsg}`));
+        }
+      }
 
       // Na desinstalação, removemos por arquivo para evitar múltiplas tentativas
       // de remover marcadores que o regex global já removeu.
@@ -93,5 +212,14 @@ export class ModuleInstaller {
     const updated = this.markerService.removeModule(content, moduleName);
 
     await fs.writeFile(filePath, updated);
+  }
+
+  private async readManifest(dir: string): Promise<ModuleJson | null> {
+    try {
+      const raw = await fs.readFile(path.join(dir, 'module.json'), 'utf-8');
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 }

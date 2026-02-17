@@ -9,25 +9,27 @@ export async function authWhoami(): Promise<void> {
   const authService = new AuthService();
 
   try {
-    const userInfo = await authService.getUserInfo();
+    const info = await authService.getWhoamiInfo();
 
-    if (!userInfo) {
-      console.log(chalk.yellow("Você não está autenticado."));
-      console.log(chalk.gray("Use 'kaven auth login' para entrar."));
+    if (!info) {
+      console.log(chalk.yellow("You are not authenticated."));
+      console.log(chalk.gray("Use 'kaven auth login' to sign in."));
       telemetry.capture("cli.auth.whoami.not_authenticated");
       await telemetry.flush();
       return;
     }
 
     telemetry.capture("cli.auth.whoami.authenticated");
-    console.log(chalk.blue("👤 Usuário logado:"));
-    console.log(`${chalk.bold("ID:")}    ${userInfo.id}`);
-    console.log(`${chalk.bold("E-mail:")} ${userInfo.email}`);
-    if (userInfo.name) {
-      console.log(`${chalk.bold("Nome:")}   ${userInfo.name}`);
-    }
+    console.log();
+    console.log(`  ${chalk.bold("Email:")}    ${info.email}`);
+    console.log(`  ${chalk.bold("GitHub:")}   ${info.githubId}`);
+    console.log(`  ${chalk.bold("Tier:")}     ${info.tier}`);
+    console.log(`  ${chalk.bold("Session:")}  ${info.sessionExpiry}`);
+    console.log();
   } catch {
-    console.error(chalk.red("Erro ao verificar status de autenticação."));
+    console.error(chalk.red("Error checking authentication status."));
     process.exit(1);
   }
+
+  await telemetry.flush();
 }
