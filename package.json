@@ -48,6 +48,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "eslint": "^8.0.0",
+    "msw": "^2.12.10",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"
   },

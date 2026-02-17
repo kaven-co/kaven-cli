@@ -20,6 +20,8 @@ import type { ModuleManifest } from "../../core/ModuleInstaller";
 export interface MarketplaceInstallOptions {
   version?: string;
   force?: boolean;
+  skipEnv?: boolean;
+  envFile?: string;
 }
 
 /** Create a unique temp directory for this install session. */

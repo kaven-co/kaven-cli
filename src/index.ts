@@ -101,10 +101,14 @@ export const main = () => {
     .description("Baixa e instala um módulo via Marketplace")
     .option("--version <ver>", "Install specific version (default: latest)")
     .option("--force", "Skip overwrite confirmation")
+    .option("--skip-env", "Skip environment variable injection")
+    .option("--env-file <path>", "Target .env file (default: .env)")
     .action((moduleId, options) =>
       marketplaceInstall(moduleId, {
         version: options.version,
         force: options.force ?? false,
+        skipEnv: options.skipEnv ?? false,
+        envFile: options.envFile,
       })
     );
 

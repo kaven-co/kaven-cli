@@ -23,7 +23,15 @@ interface ModuleJson {
     postInstall?: Array<{ command: string; args?: string[] }>;
     preRemove?: Array<{ command: string; args?: string[] }>;
   };
+  env?: Array<{ key: string; required?: boolean; example?: string }>;
   [key: string]: unknown;
+}
+
+export interface ModuleInstallerOptions {
+  envFile?: string;
+  skipEnv?: boolean;
+  yes?: boolean;
+  force?: boolean;
 }
 
 export class ModuleInstaller {
@@ -73,7 +81,7 @@ export class ModuleInstaller {
     return [...new Set(files)];
   }
 
-  async install(manifest: ModuleManifest): Promise<void> {
+  async install(manifest: ModuleManifest, options?: ModuleInstallerOptions): Promise<void> {
     const tx = new TransactionalFileSystem(this.projectRoot);
 
     try {
@@ -105,6 +113,23 @@ export class ModuleInstaller {
           console.warn(chalk.dim('  The module is installed. Run the script manually if needed.'));
         }
       }
+
+      // Inject environment variables if defined in module.json
+      if (!options?.skipEnv && moduleJson?.env?.length) {
+        const { EnvManager } = await import('./EnvManager.js');
+        const envManager = new EnvManager();
+        const envVarDefs = moduleJson.env.map((e) => ({
+          name: e.key,
+          description: e.example ?? e.key,
+          required: e.required ?? false,
+        }));
+        await envManager.injectEnvVars(manifest.name, envVarDefs, {
+          projectDir: this.projectRoot,
+          envFile: options?.envFile,
+          skipEnv: options?.skipEnv,
+          skipConfirmation: options?.yes,
+        });
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -115,7 +140,7 @@ export class ModuleInstaller {
     }
   }
 
-  async uninstall(manifest: ModuleManifest): Promise<void> {
+  async uninstall(manifest: ModuleManifest, options?: ModuleInstallerOptions): Promise<void> {
     const tx = new TransactionalFileSystem(this.projectRoot);
 
     try {
@@ -123,6 +148,14 @@ export class ModuleInstaller {
         new Set(manifest.injections.map((inj) => inj.file)),
       );
       await tx.backup(filesToModify);
+
+      // Remove environment variables before removing files
+      const { EnvManager } = await import('./EnvManager.js');
+      const envManager = new EnvManager();
+      envManager.removeEnvVars(manifest.name, {
+        projectDir: this.projectRoot,
+        skipEnv: options?.skipEnv,
+      });
 
       // Run preRemove lifecycle scripts if defined in module.json
       const moduleJson = await this.readManifest(this.projectRoot);
