@@ -1,21 +1,19 @@
 import chalk from "chalk";
-import ora from "ora";
 import { AuthService } from "../../core/AuthService";
 
 export async function authLogout(): Promise<void> {
   const authService = new AuthService();
-  const spinner = ora("Encerrando sessão...").start();
 
   try {
     if (!(await authService.isAuthenticated())) {
-      spinner.info(chalk.yellow("Você não está autenticado."));
+      console.log(chalk.yellow("You are not authenticated."));
       return;
     }
 
-    await authService.clearToken();
-    spinner.succeed(chalk.green("Sessão encerrada com sucesso!"));
+    await authService.logout();
+    console.log(chalk.green("Logged out successfully."));
   } catch {
-    spinner.fail(chalk.red("Erro ao realizar logout."));
+    console.error(chalk.red("Error during logout."));
     process.exit(1);
   }
 }
