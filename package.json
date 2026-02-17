@@ -1,6 +1,6 @@
 {
   "name": "kaven-cli",
-  "version": "0.1.0-alpha.1",
+  "version": "0.2.0-alpha.1",
   "description": "Kaven CLI - The official command line tool for Kaven",
   "main": "dist/index.js",
   "bin": {
@@ -56,6 +56,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.5.2",
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.2",
