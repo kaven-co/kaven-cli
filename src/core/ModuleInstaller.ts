@@ -22,6 +22,47 @@ export class ModuleInstaller {
     private markerService: MarkerService,
   ) {}
 
+  /**
+   * Check whether the given module slug is already installed by scanning
+   * project files for its begin/end markers.
+   */
+  async isModuleInstalled(moduleName: string): Promise<boolean> {
+    try {
+      const filesToCheck = await this.findProjectFiles();
+      for (const filePath of filesToCheck) {
+        try {
+          const content = await fs.readFile(filePath, "utf-8");
+          if (this.markerService.hasModule(content, moduleName)) {
+            return true;
+          }
+        } catch {
+          // Skip unreadable files
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Find text-based project source files to check for markers. */
+  private async findProjectFiles(): Promise<string[]> {
+    const { glob } = await import("glob");
+    const patterns = ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"];
+    const ignore = ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/build/**"];
+
+    const files: string[] = [];
+    for (const pattern of patterns) {
+      const found = await glob(pattern, {
+        cwd: this.projectRoot,
+        absolute: true,
+        ignore,
+      });
+      files.push(...found);
+    }
+    return [...new Set(files)];
+  }
+
   async install(manifest: ModuleManifest): Promise<void> {
     const tx = new TransactionalFileSystem(this.projectRoot);
 

@@ -76,12 +76,36 @@ export const main = () => {
   marketplaceCommand
     .command("list")
     .description("Lista todos os módulos disponíveis no marketplace")
-    .action(() => marketplaceList());
+    .option("--category <category>", "Filter by category")
+    .option(
+      "--sort <field>",
+      "Sort order: newest (default), popular, name",
+      "newest"
+    )
+    .option("--page <n>", "Page number (default: 1)", "1")
+    .option("--limit <n>", "Results per page (default: 20, max: 100)", "20")
+    .option("--json", "Output raw JSON")
+    .action((options) =>
+      marketplaceList({
+        category: options.category,
+        sort: options.sort as "newest" | "popular" | "name",
+        page: parseInt(options.page, 10),
+        limit: parseInt(options.limit, 10),
+        json: options.json ?? false,
+      })
+    );
 
   marketplaceCommand
     .command("install <moduleId>")
     .description("Baixa e instala um módulo via Marketplace")
-    .action((moduleId) => marketplaceInstall(moduleId));
+    .option("--version <ver>", "Install specific version (default: latest)")
+    .option("--force", "Skip overwrite confirmation")
+    .action((moduleId, options) =>
+      marketplaceInstall(moduleId, {
+        version: options.version,
+        force: options.force ?? false,
+      })
+    );
 
   /**
    * Telemetry Group

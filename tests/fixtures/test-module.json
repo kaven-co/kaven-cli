@@ -1,0 +1,23 @@
+{
+  "name": "test-module",
+  "version": "1.0.0",
+  "description": "Test module for unit tests",
+  "author": "kaven",
+  "license": "MIT",
+  "dependencies": {
+    "npm": [],
+    "peerModules": [],
+    "kavenVersion": ">=0.1.0"
+  },
+  "files": {
+    "backend": [],
+    "frontend": [],
+    "database": []
+  },
+  "injections": [],
+  "scripts": {
+    "postInstall": null,
+    "preRemove": null
+  },
+  "env": []
+}

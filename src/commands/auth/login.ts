@@ -1,6 +1,5 @@
 import chalk from "chalk";
 import ora, { Ora } from "ora";
-// @ts-expect-error - open package types not installed yet
 import open from "open";
 import { AuthService } from "../../core/AuthService";
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
