@@ -386,6 +386,41 @@ export class MarketplaceClient {
     });
   }
 
+
+  // ──────────────────────────────────────────────────────────
+  // License endpoints
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Validate a license key against the required tier.
+   */
+  async validateLicense(licenseKey: string, requiredTier: string): Promise<{
+    valid: boolean;
+    tier: string;
+    expiresAt: string | null;
+  }> {
+    const response = await this.request<{ valid: boolean; tier: string; expiresAt: string | null }>(
+      'POST',
+      '/licenses/validate',
+      {
+        body: { licenseKey, requiredTier },
+      }
+    );
+    return response;
+  }
+
+  /**
+   * Get full license status including expiry information.
+   */
+  async getLicenseStatus(licenseKey: string): Promise<{
+    key: string;
+    tier: string;
+    expiresAt: string | null;
+    daysUntilExpiry: number | null;
+  }> {
+    return this.request('GET', `/licenses/status?key=${encodeURIComponent(licenseKey)}`);
+  }
+
   // ──────────────────────────────────────────────────────────
   // Legacy / backward-compat methods
   // ──────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { authWhoami } from "./commands/auth/whoami";
 import { marketplaceList } from "./commands/marketplace/list";
 import { marketplaceInstall } from "./commands/marketplace/install";
 import { telemetryView } from "./commands/telemetry/view";
+import { buildLicenseCommand } from "./commands/license/index.js";
 
 export const main = () => {
   const program = new Command();
@@ -119,6 +120,11 @@ export const main = () => {
     .description("Visualiza os últimos eventos de telemetria locais")
     .option("-l, --limit <number>", "Número de eventos a exibir", "10")
     .action((options) => telemetryView(parseInt(options.limit)));
+
+  /**
+   * License Group
+   */
+  program.addCommand(buildLicenseCommand());
 
   program.parse();
 };
