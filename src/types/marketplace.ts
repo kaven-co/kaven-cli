@@ -26,6 +26,9 @@ export interface ModuleRelease {
   changelog: string;
   installCount: number;
   createdAt: string;
+  checksum?: string;
+  signature?: string;
+  publicKey?: string;
 }
 
 export interface DownloadToken {

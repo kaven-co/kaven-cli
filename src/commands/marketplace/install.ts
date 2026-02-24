@@ -14,7 +14,9 @@ import {
   LicenseRequiredError,
   NotFoundError,
   NetworkError,
+  SignatureVerificationError,
 } from "../../infrastructure/errors";
+import { verifyDownload } from "../../core/SignatureVerifier";
 import type { ModuleManifest } from "../../core/ModuleInstaller";
 
 export interface MarketplaceInstallOptions {
@@ -22,6 +24,7 @@ export interface MarketplaceInstallOptions {
   force?: boolean;
   skipEnv?: boolean;
   envFile?: string;
+  skipVerify?: boolean;
 }
 
 /** Create a unique temp directory for this install session. */
@@ -169,14 +172,33 @@ export async function marketplaceInstall(
       pump();
     });
 
-    // 6. Verify SHA-256 checksum if provided
-    if (downloadToken.token) {
-      // The token acts as a download auth token, not a checksum.
-      // If the API were to return a checksum field, we'd verify here.
-      // For now we verify the file exists and has content.
-      const stat = await fs.stat(tarPath);
-      if (stat.size === 0) {
-        throw new Error("Downloaded file is empty");
+    // 6. Verify Ed25519 signature and SHA-256 checksum
+    const stat = await fs.stat(tarPath);
+    if (stat.size === 0) {
+      throw new Error("Downloaded file is empty");
+    }
+
+    if (!options.skipVerify) {
+      spinner.text = `Verifying signature for ${slug} v${installVersion}...`;
+      const releaseInfo = await client.getReleaseInfo(
+        slug,
+        installVersion
+      );
+
+      if (
+        releaseInfo.checksum &&
+        releaseInfo.signature &&
+        releaseInfo.publicKey
+      ) {
+        await verifyDownload({
+          filePath: tarPath,
+          expectedChecksum: releaseInfo.checksum,
+          signatureHex: releaseInfo.signature,
+          publicKeyBase64: releaseInfo.publicKey,
+        });
+        spinner.text = `Signature verified for ${slug} v${installVersion}`;
+      } else {
+        spinner.text = `No signature data for ${slug} v${installVersion} — skipping verification`;
       }
     }
 
@@ -213,6 +235,23 @@ export async function marketplaceInstall(
     await telemetry.flush();
   } catch (error) {
     spinner.stop();
+
+    if (error instanceof SignatureVerificationError) {
+      console.error(
+        chalk.red(`Signature verification failed for '${slug}': ${error.message}`)
+      );
+      console.error(
+        chalk.yellow("Use --skip-verify to bypass (not recommended).")
+      );
+      telemetry.capture(
+        "cli.marketplace.install.error",
+        { slug, error: "signature_verification_failed" },
+        Date.now() - startTime
+      );
+      await telemetry.flush();
+      process.exit(1);
+      return;
+    }
 
     if (error instanceof LicenseRequiredError) {
       console.error(
