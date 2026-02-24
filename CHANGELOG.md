@@ -5,6 +5,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0-alpha.1] - 2026-02-24
+
+### Security
+
+- Resolve 4 Dependabot vulnerabilities (esbuild, brace-expansion, minimatch)
+
+### Added
+
+- **Ed25519 signature verification** on module download (`--skip-verify` flag)
+- **Public key registration** on module publish
+- **`kaven config` command**: get/set/view/reset CLI configuration
+- **`kaven init-ci`**: CI/CD setup scaffolding
+- **ErrorRecovery** core module for graceful error handling and retries
+- **RegistryResolver** core module for multi-registry resolution
+- **ConfigManager** core module for layered configuration
+- **Upgrade check utility**: notifies when a newer CLI version is available
+
+---
+
 ## [0.2.0-alpha.1] - 2026-02-17
 
 ### Added
@@ -112,5 +131,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+[0.3.0-alpha.1]: https://github.com/kaven-co/kaven-cli/compare/v0.2.0-alpha.1...v0.3.0-alpha.1
 [0.2.0-alpha.1]: https://github.com/kaven-co/kaven-cli/compare/v0.1.0-alpha.1...v0.2.0-alpha.1
 [0.1.0-alpha.1]: https://github.com/kaven-co/kaven-cli/releases/tag/v0.1.0-alpha.1
