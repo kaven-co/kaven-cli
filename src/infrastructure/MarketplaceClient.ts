@@ -437,4 +437,87 @@ export class MarketplaceClient {
       throw error;
     }
   }
+
+  // ──────────────────────────────────────────────────────────
+  // Publish endpoints (authenticated)
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Get a presigned S3 upload URL for a new module release.
+   */
+  async getUploadUrl(
+    moduleSlug: string,
+    version: string,
+    size: number
+  ): Promise<{ uploadUrl: string; s3Key: string }> {
+    return this.request("POST", "/releases/upload-url", {
+      body: { moduleSlug, version, size },
+      authenticated: true,
+    });
+  }
+
+  /**
+   * Create a release record after uploading the artifact.
+   */
+  async createRelease(data: {
+    moduleSlug: string;
+    version: string;
+    s3Key: string;
+    checksum: string;
+    changelog?: string;
+  }): Promise<{ id: string; version: string }> {
+    return this.request("POST", "/releases", {
+      body: data,
+      authenticated: true,
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Checkout / upgrade endpoints (authenticated)
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Create a Paddle checkout session for tier upgrade.
+   */
+  async createCheckoutSession(
+    tier: string,
+    licenseKey: string
+  ): Promise<{ sessionUrl: string; sessionId: string }> {
+    return this.request("POST", "/checkout/session", {
+      body: { tier, licenseKey },
+      authenticated: true,
+    });
+  }
+
+  /**
+   * Poll the status of an ongoing Paddle checkout session.
+   */
+  async getCheckoutStatus(
+    sessionId: string
+  ): Promise<{
+    status: "pending" | "confirmed" | "cancelled" | "failed";
+    tier?: string;
+  }> {
+    return this.request(
+      "GET",
+      `/checkout/session/${sessionId}/status`,
+      { authenticated: true }
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Categories endpoint (authenticated)
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Get all available module categories.
+   */
+  async getCategories(): Promise<string[]> {
+    const result = await this.request<{ categories: string[] }>(
+      "GET",
+      "/modules/categories",
+      { authenticated: true }
+    );
+    return result.categories;
+  }
 }
