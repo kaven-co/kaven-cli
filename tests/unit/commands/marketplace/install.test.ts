@@ -44,6 +44,7 @@ vi.mock("../../../../src/infrastructure/MarketplaceClient", () => ({
   MarketplaceClient: vi.fn(() => ({
     getModule: vi.fn(),
     createDownloadToken: vi.fn(),
+    getReleaseInfo: vi.fn(),
   })),
 }));
 
@@ -164,6 +165,7 @@ describe("marketplaceInstall (C1.5)", () => {
   let mockIsAuthenticated: ReturnType<typeof vi.fn>;
   let mockGetModule: ReturnType<typeof vi.fn>;
   let mockCreateDownloadToken: ReturnType<typeof vi.fn>;
+  let mockGetReleaseInfo: ReturnType<typeof vi.fn>;
   let mockInstall: ReturnType<typeof vi.fn>;
   let mockIsModuleInstalled: ReturnType<typeof vi.fn>;
 
@@ -192,6 +194,14 @@ describe("marketplaceInstall (C1.5)", () => {
     mockIsAuthenticated = vi.fn().mockResolvedValue(true);
     mockGetModule = vi.fn().mockResolvedValue(makeModule());
     mockCreateDownloadToken = vi.fn().mockResolvedValue(makeDownloadToken());
+    mockGetReleaseInfo = vi.fn().mockResolvedValue({
+      id: "rel-1",
+      moduleId: "module-abc",
+      version: "1.2.0",
+      changelog: "",
+      installCount: 0,
+      createdAt: "2026-01-01T00:00:00Z",
+    });
     mockInstall = vi.fn().mockResolvedValue(undefined);
     mockIsModuleInstalled = vi.fn().mockResolvedValue(false);
 
@@ -204,6 +214,7 @@ describe("marketplaceInstall (C1.5)", () => {
     (MarketplaceClient as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       getModule: mockGetModule,
       createDownloadToken: mockCreateDownloadToken,
+      getReleaseInfo: mockGetReleaseInfo,
     }));
 
     (ModuleInstaller as ReturnType<typeof vi.fn>).mockImplementation(() => ({

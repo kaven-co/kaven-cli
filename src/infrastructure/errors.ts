@@ -49,3 +49,10 @@ export class NetworkError extends MarketplaceError {
     this.name = "NetworkError";
   }
 }
+
+export class SignatureVerificationError extends MarketplaceError {
+  constructor(message: string) {
+    super(message);
+    this.name = "SignatureVerificationError";
+  }
+}

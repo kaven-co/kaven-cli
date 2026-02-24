@@ -248,6 +248,7 @@ Examples:
     .option("--version <ver>", "Install a specific version (default: latest)")
     .option("--force", "Skip overwrite confirmation")
     .option("--skip-env", "Skip environment variable injection")
+    .option("--skip-verify", "Skip Ed25519 signature verification (dev only)")
     .option("--env-file <path>", "Target .env file (default: .env)")
     .addHelpText(
       "after",
@@ -256,6 +257,7 @@ Examples:
   $ kaven marketplace install payments
   $ kaven marketplace install payments --version 1.2.0
   $ kaven marketplace install auth --skip-env
+  $ kaven marketplace install my-module --skip-verify
 `
     )
     .action((moduleId, options) =>
@@ -263,6 +265,7 @@ Examples:
         version: options.version,
         force: options.force ?? false,
         skipEnv: options.skipEnv ?? false,
+        skipVerify: options.skipVerify ?? false,
         envFile: options.envFile,
       })
     );
