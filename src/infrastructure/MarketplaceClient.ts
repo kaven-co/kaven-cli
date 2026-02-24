@@ -5,6 +5,7 @@ import { ModuleManifest } from "../types/manifest";
 import { DeviceCodeResponse, TokenPollResult, AuthTokens } from "../types/auth";
 import {
   Module,
+  ModuleRelease,
   PaginatedResponse,
   DownloadToken,
   ModuleListFilters,
@@ -438,6 +439,21 @@ export class MarketplaceClient {
     }
   }
 
+  /**
+   * Get release details for a specific module version.
+   * Returns checksum, signature, and publicKey for verification.
+   */
+  async getReleaseInfo(
+    slug: string,
+    version: string
+  ): Promise<ModuleRelease> {
+    return this.request<ModuleRelease>(
+      "GET",
+      `/modules/${slug}/releases/${version}`,
+      { authenticated: true }
+    );
+  }
+
   // ──────────────────────────────────────────────────────────
   // Publish endpoints (authenticated)
   // ──────────────────────────────────────────────────────────
@@ -464,6 +480,8 @@ export class MarketplaceClient {
     version: string;
     s3Key: string;
     checksum: string;
+    signature: string;
+    publicKey: string;
     changelog?: string;
   }): Promise<{ id: string; version: string }> {
     return this.request("POST", "/releases", {
