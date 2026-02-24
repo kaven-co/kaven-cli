@@ -312,4 +312,11 @@ export async function modulePublish(options: PublishOptions): Promise<void> {
       `View your module at: https://marketplace.kaven.sh/modules/${moduleJson.slug}`
     )
   );
+
+  // Show next steps
+  console.log();
+  console.log(chalk.bold("Next steps:"));
+  console.log(chalk.gray("  1. Share your module with the community"));
+  console.log(chalk.gray("  2. Monitor installation metrics"));
+  console.log(chalk.gray("  3. Update module with 'kaven module publish' when ready"));
 }

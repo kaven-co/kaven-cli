@@ -13,8 +13,10 @@ import { marketplaceBrowse } from "./commands/marketplace/browse";
 import { telemetryView } from "./commands/telemetry/view";
 import { buildLicenseCommand } from "./commands/license/index.js";
 import { initProject } from "./commands/init/index";
-import { upgradeCommand } from "./commands/upgrade/index";
+import { upgradeCommand, upgradeCheck, upgradeInstall } from "./commands/upgrade/index";
 import { cacheStatus, cacheClear } from "./commands/cache/index";
+import { configSet, configGet, configView, configReset } from "./commands/config/index";
+import { initCi } from "./commands/init-ci/index";
 
 export const main = () => {
   const program = new Command();
@@ -280,30 +282,40 @@ Supports category filtering and pagination.
     .action(() => marketplaceBrowse());
 
   /**
-   * Upgrade command — Tier upgrade via Paddle checkout
+   * Upgrade Group — License tier upgrades and CLI updates
    */
-  program
+  const upgradeCommandGroup = program
     .command("upgrade")
-    .description("Upgrade your Kaven license to a higher tier")
-    .option("--no-browser", "Print the checkout URL instead of opening the browser")
+    .description("Upgrade your license tier or CLI version")
     .addHelpText(
       "after",
       `
-This command creates a Paddle checkout session and polls for completion.
-The upgrade is confirmed automatically when payment is processed (max 10 min).
-
 Examples:
-  $ kaven upgrade
-  $ kaven upgrade --no-browser
-
-Need help? https://kaven.sh/pricing
+  $ kaven upgrade                  Upgrade license tier
+  $ kaven upgrade check            Check for CLI updates
+  $ kaven upgrade install          Install latest CLI version
 `
-    )
+    );
+
+  upgradeCommandGroup
+    .command("tier")
+    .description("Upgrade your Kaven license to a higher tier (default)")
+    .option("--no-browser", "Print the checkout URL instead of opening the browser")
     .action((opts) =>
       upgradeCommand({
         browser: opts.browser !== false,
       })
     );
+
+  upgradeCommandGroup
+    .command("check")
+    .description("Check for Kaven CLI updates")
+    .action(() => upgradeCheck());
+
+  upgradeCommandGroup
+    .command("install")
+    .description("Install the latest Kaven CLI version")
+    .action(() => upgradeInstall());
 
   /**
    * Telemetry Group
@@ -350,6 +362,69 @@ Examples:
     .command("clear")
     .description("Delete all locally cached API responses")
     .action(() => cacheClear());
+
+  /**
+   * Config Group — Manage Kaven CLI configuration
+   */
+  const configCommand = program
+    .command("config")
+    .description("Manage Kaven CLI configuration")
+    .addHelpText(
+      "after",
+      `
+Config file: ~/.kaven/config.json
+
+Examples:
+  $ kaven config set registry https://custom.registry.sh
+  $ kaven config get registry
+  $ kaven config view
+  $ kaven config reset
+`
+    );
+
+  configCommand
+    .command("set <key> <value>")
+    .description("Set a configuration value")
+    .action((key, value) => configSet(key, value));
+
+  configCommand
+    .command("get <key>")
+    .description("Get a configuration value")
+    .option("--json", "Output as JSON")
+    .action((key, opts) => configGet(key, { json: opts.json }));
+
+  configCommand
+    .command("view")
+    .description("Display all configuration")
+    .option("--json", "Output as JSON")
+    .action((opts) => configView({ json: opts.json }));
+
+  configCommand
+    .command("reset")
+    .description("Reset configuration to defaults")
+    .action(() => configReset());
+
+  /**
+   * Init CI — Initialize CI/CD workflows
+   */
+  program
+    .command("init-ci")
+    .description("Initialize GitHub Actions CI/CD workflows")
+    .option("--dry-run", "Show what would be created without writing files")
+    .addHelpText(
+      "after",
+      `
+Creates:
+  - .github/workflows/test.yml       Run tests on push/PR
+  - .github/workflows/publish.yml    Publish modules on git tags
+  - .husky/pre-commit                Local pre-commit validation
+
+Examples:
+  $ kaven init-ci                  Interactive setup
+  $ kaven init-ci --dry-run        Show what would be created
+`
+    )
+    .action((opts) => initCi({ dryRun: opts.dryRun }));
 
   program.parse();
 };

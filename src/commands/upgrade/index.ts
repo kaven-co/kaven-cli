@@ -6,10 +6,14 @@ import fs from "fs-extra";
 import os from "os";
 import { AuthService } from "../../core/AuthService";
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
+import { upgradeCheck, upgradeInstall } from "./check";
 
 export interface UpgradeOptions {
   browser?: boolean;
 }
+
+// Export check and install functions for CLI commands
+export { upgradeCheck, upgradeInstall };
 
 const LICENSE_PATH = path.join(os.homedir(), ".kaven", "license.json");
 

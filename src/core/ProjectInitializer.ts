@@ -133,4 +133,32 @@ export class ProjectInitializer {
       targetDir
     );
   }
+
+  /** Health check after project initialization. */
+  async healthCheck(
+    targetDir: string
+  ): Promise<{ healthy: boolean; issues: string[] }> {
+    const issues: string[] = [];
+
+    // Check key files exist
+    const requiredFiles = ["package.json", ".env.example", "prisma/schema.prisma"];
+    for (const file of requiredFiles) {
+      if (!(await fs.pathExists(path.join(targetDir, file)))) {
+        issues.push(`Missing required file: ${file}`);
+      }
+    }
+
+    // Check node_modules exists (if install was run)
+    const hasNodeModules = await fs.pathExists(path.join(targetDir, "node_modules"));
+    if (!hasNodeModules) {
+      issues.push(
+        "Dependencies not installed. Run: pnpm install"
+      );
+    }
+
+    return {
+      healthy: issues.length === 0,
+      issues,
+    };
+  }
 }

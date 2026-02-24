@@ -7,14 +7,21 @@ import {
   InitOptions,
   InitPromptAnswers,
 } from "../../core/ProjectInitializer";
+import { configManager } from "../../core/ConfigManager";
 
-async function promptAnswers(): Promise<InitPromptAnswers> {
+async function promptAnswers(projectName: string): Promise<InitPromptAnswers> {
   // Dynamic import to keep startup fast and avoid issues if not installed
   const { input, select } = await import("@inquirer/prompts");
 
+  // Load defaults from config if available
+  await configManager.initialize();
+  const existingDefaults = configManager.getAll().projectDefaults || {};
+
   const dbUrl = await input({
     message: "Database URL (PostgreSQL):",
-    default: "postgresql://user:password@localhost:5432/myapp",
+    default:
+      existingDefaults.dbUrl ||
+      `postgresql://user:password@localhost:5432/${projectName}`,
   });
 
   const emailProvider = await select<string>({
@@ -25,16 +32,17 @@ async function promptAnswers(): Promise<InitPromptAnswers> {
       { name: "AWS SES", value: "ses" },
       { name: "SMTP", value: "smtp" },
     ],
+    default: existingDefaults.emailProvider || "postmark",
   });
 
   const locale = await input({
     message: "Default locale:",
-    default: "en-US",
+    default: existingDefaults.locale || "en-US",
   });
 
   const currency = await input({
     message: "Default currency:",
-    default: "USD",
+    default: existingDefaults.currency || "USD",
   });
 
   return { dbUrl, emailProvider, locale, currency };
@@ -86,15 +94,20 @@ export async function initProject(
   // Get prompt answers or use defaults
   let answers: InitPromptAnswers;
   if (options.defaults) {
+    // Try to load from config, then fallback to options
+    await configManager.initialize();
+    const configDefaults = configManager.getAll().projectDefaults || {};
     answers = {
       dbUrl:
-        options.dbUrl || "postgresql://user:password@localhost:5432/" + name,
-      emailProvider: options.emailProvider || "postmark",
-      locale: options.locale || "en-US",
-      currency: options.currency || "USD",
+        options.dbUrl ||
+        configDefaults.dbUrl ||
+        `postgresql://user:password@localhost:5432/${name}`,
+      emailProvider: options.emailProvider || configDefaults.emailProvider || "postmark",
+      locale: options.locale || configDefaults.locale || "en-US",
+      currency: options.currency || configDefaults.currency || "USD",
     };
   } else {
-    answers = await promptAnswers();
+    answers = await promptAnswers(name);
   }
 
   console.log();
@@ -158,6 +171,18 @@ export async function initProject(
     }
   }
 
+  // Health check
+  const healthCheckSpinner = ora("Running health check...").start();
+  const health = await initializer.healthCheck(targetDir);
+  if (health.healthy) {
+    healthCheckSpinner.succeed("Health check passed");
+  } else {
+    healthCheckSpinner.warn("Health check found issues:");
+    for (const issue of health.issues) {
+      console.log(chalk.yellow(`  ⚠ ${issue}`));
+    }
+  }
+
   // Success message
   console.log();
   console.log(chalk.green("✅ Project created successfully!"));
@@ -173,4 +198,17 @@ export async function initProject(
       "For more help, visit: https://docs.kaven.sh/getting-started"
     )
   );
+
+  // Save project defaults to config for future use
+  await configManager.initialize();
+  try {
+    await configManager.set("projectDefaults", {
+      dbUrl: answers.dbUrl,
+      emailProvider: answers.emailProvider,
+      locale: answers.locale,
+      currency: answers.currency,
+    });
+  } catch {
+    // Non-critical, continue if config save fails
+  }
 }
