@@ -5,6 +5,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.1] - 2026-02-28
+
+### Fixed
+
+- Ed25519 signature verification tolerates trailing newline from shell-based signing
+- Verified against production marketplace `payments` module signature
+
+---
+
 ## [0.3.0] - 2026-02-28
 
 ### Fixed
