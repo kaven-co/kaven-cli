@@ -31,9 +31,8 @@ function decodeSignature(encoded: string): Buffer {
  * Verify Ed25519 signature against a SHA-256 checksum.
  *
  * Accepts signature in either hex or base64 encoding.
- * The publisher signs the hex-encoded checksum with their
- * Ed25519 private key. We verify using the public key stored
- * in the release metadata.
+ * Tolerates signatures made over checksum with trailing newline
+ * (common when signing via `echo checksum > file && openssl sign`).
  */
 export function verifyEd25519Signature(
   checksum: string,
@@ -48,9 +47,14 @@ export function verifyEd25519Signature(
     });
 
     const sigBuffer = decodeSignature(signature);
+
+    if (crypto.verify(null, Buffer.from(checksum), publicKey, sigBuffer)) {
+      return true;
+    }
+    // Tolerate trailing newline from shell-based signing
     return crypto.verify(
       null,
-      Buffer.from(checksum),
+      Buffer.from(checksum + "\n"),
       publicKey,
       sigBuffer
     );
