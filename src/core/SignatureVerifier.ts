@@ -12,16 +12,32 @@ export async function computeFileChecksum(
   return crypto.createHash("sha256").update(data).digest("hex");
 }
 
+const HEX_PATTERN = /^[0-9a-fA-F]+$/;
+
+/**
+ * Decode a signature string that may be hex or base64 encoded.
+ * Ed25519 signatures are always 64 bytes:
+ *   - hex: 128 chars, only [0-9a-fA-F]
+ *   - base64: 88 chars, may contain +/=
+ */
+function decodeSignature(encoded: string): Buffer {
+  if (HEX_PATTERN.test(encoded) && encoded.length === 128) {
+    return Buffer.from(encoded, "hex");
+  }
+  return Buffer.from(encoded, "base64");
+}
+
 /**
  * Verify Ed25519 signature against a SHA-256 checksum.
  *
+ * Accepts signature in either hex or base64 encoding.
  * The publisher signs the hex-encoded checksum with their
  * Ed25519 private key. We verify using the public key stored
  * in the release metadata.
  */
 export function verifyEd25519Signature(
   checksum: string,
-  signatureHex: string,
+  signature: string,
   publicKeyBase64: string
 ): boolean {
   try {
@@ -31,12 +47,12 @@ export function verifyEd25519Signature(
       format: "der",
     });
 
-    const signature = Buffer.from(signatureHex, "hex");
+    const sigBuffer = decodeSignature(signature);
     return crypto.verify(
       null,
       Buffer.from(checksum),
       publicKey,
-      signature
+      sigBuffer
     );
   } catch {
     return false;
@@ -46,7 +62,7 @@ export function verifyEd25519Signature(
 export interface VerifyDownloadOptions {
   filePath: string;
   expectedChecksum: string;
-  signatureHex: string;
+  signature: string;
   publicKeyBase64: string;
 }
 
@@ -71,7 +87,7 @@ export async function verifyDownload(
 
   const valid = verifyEd25519Signature(
     opts.expectedChecksum,
-    opts.signatureHex,
+    opts.signature,
     opts.publicKeyBase64
   );
 

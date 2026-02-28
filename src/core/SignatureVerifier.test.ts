@@ -56,7 +56,7 @@ describe("SignatureVerifier", () => {
   });
 
   describe("verifyEd25519Signature", () => {
-    it("returns true for valid signature", () => {
+    it("returns true for valid hex signature", () => {
       const checksum = "abc123deadbeef";
       const signature = crypto.sign(
         null,
@@ -68,6 +68,23 @@ describe("SignatureVerifier", () => {
       const result = verifyEd25519Signature(
         checksum,
         signatureHex,
+        publicKeyBase64
+      );
+      expect(result).toBe(true);
+    });
+
+    it("returns true for valid base64 signature", () => {
+      const checksum = "abc123deadbeef";
+      const signature = crypto.sign(
+        null,
+        Buffer.from(checksum),
+        privateKey
+      );
+      const signatureBase64 = signature.toString("base64");
+
+      const result = verifyEd25519Signature(
+        checksum,
+        signatureBase64,
         publicKeyBase64
       );
       expect(result).toBe(true);
@@ -126,7 +143,7 @@ describe("SignatureVerifier", () => {
   });
 
   describe("verifyDownload", () => {
-    it("succeeds for valid file + checksum + signature", async () => {
+    it("succeeds with hex signature", async () => {
       const filePath = path.join(tempDir, "valid-module.tar.gz");
       const content = Buffer.from("valid module content");
       await fs.writeFile(filePath, content);
@@ -145,7 +162,32 @@ describe("SignatureVerifier", () => {
         verifyDownload({
           filePath,
           expectedChecksum: checksum,
-          signatureHex: signature.toString("hex"),
+          signature: signature.toString("hex"),
+          publicKeyBase64,
+        })
+      ).resolves.toBeUndefined();
+    });
+
+    it("succeeds with base64 signature", async () => {
+      const filePath = path.join(tempDir, "valid-b64-module.tar.gz");
+      const content = Buffer.from("valid module content base64");
+      await fs.writeFile(filePath, content);
+
+      const checksum = crypto
+        .createHash("sha256")
+        .update(content)
+        .digest("hex");
+      const signature = crypto.sign(
+        null,
+        Buffer.from(checksum),
+        privateKey
+      );
+
+      await expect(
+        verifyDownload({
+          filePath,
+          expectedChecksum: checksum,
+          signature: signature.toString("base64"),
           publicKeyBase64,
         })
       ).resolves.toBeUndefined();
@@ -166,7 +208,7 @@ describe("SignatureVerifier", () => {
         verifyDownload({
           filePath,
           expectedChecksum: fakeChecksum,
-          signatureHex: signature.toString("hex"),
+          signature: signature.toString("hex"),
           publicKeyBase64,
         })
       ).rejects.toThrow(SignatureVerificationError);
@@ -175,7 +217,7 @@ describe("SignatureVerifier", () => {
         verifyDownload({
           filePath,
           expectedChecksum: fakeChecksum,
-          signatureHex: signature.toString("hex"),
+          signature: signature.toString("hex"),
           publicKeyBase64,
         })
       ).rejects.toThrow(/Checksum mismatch/);
@@ -202,7 +244,7 @@ describe("SignatureVerifier", () => {
         verifyDownload({
           filePath,
           expectedChecksum: checksum,
-          signatureHex: wrongSignature.toString("hex"),
+          signature: wrongSignature.toString("hex"),
           publicKeyBase64,
         })
       ).rejects.toThrow(SignatureVerificationError);
@@ -211,7 +253,7 @@ describe("SignatureVerifier", () => {
         verifyDownload({
           filePath,
           expectedChecksum: checksum,
-          signatureHex: wrongSignature.toString("hex"),
+          signature: wrongSignature.toString("base64"),
           publicKeyBase64,
         })
       ).rejects.toThrow(/signature verification failed/i);

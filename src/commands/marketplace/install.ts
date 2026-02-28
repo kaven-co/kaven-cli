@@ -203,7 +203,7 @@ export async function marketplaceInstall(
         await verifyDownload({
           filePath: tarPath,
           expectedChecksum: releaseInfo.checksum,
-          signatureHex: releaseInfo.signature,
+          signature: releaseInfo.signature,
           publicKeyBase64: releaseInfo.publicKey,
         });
         spinner.text = `Signature verified for ${slug} v${installVersion}`;
