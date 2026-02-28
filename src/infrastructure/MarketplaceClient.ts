@@ -349,18 +349,14 @@ export class MarketplaceClient {
     const query = params.toString();
     const endpoint = `/modules${query ? `?${query}` : ""}`;
 
-    return this.request<PaginatedResponse<Module>>("GET", endpoint, {
-      authenticated: true,
-    });
+    return this.request<PaginatedResponse<Module>>("GET", endpoint);
   }
 
   /**
    * Get a single module by slug.
    */
   async getModule(slug: string): Promise<Module> {
-    return this.request<Module>("GET", `/modules/${slug}`, {
-      authenticated: true,
-    });
+    return this.request<Module>("GET", `/modules/${slug}`);
   }
 
   /**
@@ -369,8 +365,7 @@ export class MarketplaceClient {
   async getManifest(slug: string, version: string): Promise<ModuleManifest> {
     return this.request<ModuleManifest>(
       "GET",
-      `/modules/${slug}/versions/${version}/manifest`,
-      { authenticated: true }
+      `/modules/${slug}/versions/${version}/manifest`
     );
   }
 

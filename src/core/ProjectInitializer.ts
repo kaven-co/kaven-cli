@@ -101,6 +101,8 @@ export class ProjectInitializer {
       ".env.example",
       "prisma/schema.prisma",
       "apps/api/package.json",
+      "apps/admin/package.json",
+      "apps/tenant/package.json",
     ];
 
     for (const relFile of filesToProcess) {
