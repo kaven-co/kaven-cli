@@ -5,7 +5,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.3.0-alpha.1] - 2026-02-24
+## [0.3.0] - 2026-02-28
+
+### Fixed
+
+- Ed25519 signature verification now accepts base64 signatures from marketplace API
+- Marketplace public endpoints no longer require authentication (list, search)
+- Download token request body matches marketplace API schema (`moduleSlug`/`version`)
+- Release info endpoint corrected to `/modules/:slug/versions/:version`
+- Relative download URLs resolved to absolute before fetching artifacts
+- Tier display normalized from uppercase `requiredTier` API field
+- Pagination reads from `meta` object in API response
+- `latestVersion` fallback to `releases[]` array when null
+- CLI publish command sends base64 signatures for consistency
 
 ### Security
 
