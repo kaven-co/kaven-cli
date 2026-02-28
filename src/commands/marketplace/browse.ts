@@ -122,7 +122,7 @@ export async function marketplaceBrowse(): Promise<void> {
 
       const moduleChoices = [
         ...modules.map((m) => ({
-          name: `${m.name} ${tierBadge(m.tier)} — ${m.description}`,
+          name: `${m.name} ${tierBadge(m.requiredTier ?? m.tier ?? "")} — ${m.description}`,
           value: m.slug,
         })),
       ];
@@ -173,7 +173,7 @@ export async function marketplaceBrowse(): Promise<void> {
 
       // Step 3: Module detail view
       console.log();
-      console.log(chalk.bold(`${m.name}`), tierBadge(m.tier));
+      console.log(chalk.bold(`${m.name}`), tierBadge(m.requiredTier ?? m.tier ?? ""));
       console.log(chalk.gray(`Version: ${m.latestVersion || "latest"}`));
       if (m.installCount !== undefined) {
         console.log(chalk.gray(`Installs: ${m.installCount.toLocaleString()}`));

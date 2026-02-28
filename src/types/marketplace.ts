@@ -5,16 +5,27 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+export interface ModuleReleaseRef {
+  id: string;
+  version: string;
+  changelog?: string;
+  minKavenVersion?: string;
+  fileSize?: number;
+  createdAt: string;
+}
+
 export interface Module {
   id: string;
   slug: string;
   name: string;
   description: string;
   category: string;
-  tier: "starter" | "complete" | "pro" | "enterprise";
-  latestVersion: string;
-  author: string;
+  tier?: string;
+  requiredTier?: string;
+  latestVersion?: string;
+  author?: string;
   installCount: number;
+  releases?: ModuleReleaseRef[];
   createdAt: string;
   updatedAt: string;
 }
@@ -46,8 +57,8 @@ export interface ModuleListFilters {
 }
 
 export interface CreateDownloadTokenRequest {
-  moduleId: string;
-  releaseId: string;
+  moduleSlug: string;
+  version: string;
 }
 
 export interface RefreshTokenResponse {

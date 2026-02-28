@@ -79,6 +79,12 @@ export class MarketplaceClient {
     this.baseURLPromise = resolveBaseUrl();
   }
 
+  /** Resolve a relative API path to an absolute URL. */
+  async resolveUrl(path: string): Promise<string> {
+    const baseURL = await this.baseURLPromise;
+    return `${baseURL}${path}`;
+  }
+
   // ──────────────────────────────────────────────────────────
   // Core HTTP helpers
   // ──────────────────────────────────────────────────────────
@@ -373,11 +379,11 @@ export class MarketplaceClient {
    * Create a download token for a module release.
    */
   async createDownloadToken(
-    moduleId: string,
-    releaseId: string
+    moduleSlug: string,
+    version: string
   ): Promise<DownloadToken> {
     return this.request<DownloadToken>("POST", "/download-tokens", {
-      body: { moduleId, releaseId },
+      body: { moduleSlug, version },
       authenticated: true,
     });
   }
@@ -444,8 +450,7 @@ export class MarketplaceClient {
   ): Promise<ModuleRelease> {
     return this.request<ModuleRelease>(
       "GET",
-      `/modules/${slug}/releases/${version}`,
-      { authenticated: true }
+      `/modules/${slug}/versions/${version}`
     );
   }
 

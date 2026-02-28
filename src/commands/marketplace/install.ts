@@ -89,7 +89,16 @@ export async function marketplaceInstall(
       throw error;
     }
 
-    const installVersion = options.version ?? moduleData.latestVersion;
+    const latestVersion = moduleData.latestVersion
+      ?? moduleData.releases?.[0]?.version;
+    const installVersion = options.version ?? latestVersion;
+    if (!installVersion) {
+      spinner.fail(
+        chalk.red(`No published version found for '${slug}'.`)
+      );
+      process.exit(1);
+      return;
+    }
 
     // 3. Check for conflict before downloading
     const markerService = new MarkerService();
@@ -116,7 +125,7 @@ export async function marketplaceInstall(
     // 4. Create download token
     spinner.text = `Creating download token for '${slug}@${installVersion}'...`;
     const downloadToken = await client.createDownloadToken(
-      moduleData.id,
+      slug,
       installVersion
     );
 
@@ -128,7 +137,8 @@ export async function marketplaceInstall(
 
     // Fetch with size reporting
     spinner.text = `Downloading ${slug} v${installVersion}...`;
-    const response = await fetch(downloadToken.downloadUrl);
+    const absoluteUrl = await client.resolveUrl(downloadToken.downloadUrl);
+    const response = await fetch(absoluteUrl);
     if (!response.ok) {
       throw new Error(
         `Download failed: ${response.status} ${response.statusText}`
