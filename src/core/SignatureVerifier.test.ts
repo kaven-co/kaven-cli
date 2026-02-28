@@ -90,6 +90,22 @@ describe("SignatureVerifier", () => {
       expect(result).toBe(true);
     });
 
+    it("returns true when signature was made with trailing newline", () => {
+      const checksum = "abc123deadbeef";
+      const signature = crypto.sign(
+        null,
+        Buffer.from(checksum + "\n"),
+        privateKey
+      );
+
+      const result = verifyEd25519Signature(
+        checksum,
+        signature.toString("base64"),
+        publicKeyBase64
+      );
+      expect(result).toBe(true);
+    });
+
     it("returns false for tampered checksum", () => {
       const checksum = "abc123deadbeef";
       const signature = crypto.sign(
@@ -180,6 +196,31 @@ describe("SignatureVerifier", () => {
       const signature = crypto.sign(
         null,
         Buffer.from(checksum),
+        privateKey
+      );
+
+      await expect(
+        verifyDownload({
+          filePath,
+          expectedChecksum: checksum,
+          signature: signature.toString("base64"),
+          publicKeyBase64,
+        })
+      ).resolves.toBeUndefined();
+    });
+
+    it("succeeds when signature has trailing newline", async () => {
+      const filePath = path.join(tempDir, "newline-sig-module.tar.gz");
+      const content = Buffer.from("newline signed content");
+      await fs.writeFile(filePath, content);
+
+      const checksum = crypto
+        .createHash("sha256")
+        .update(content)
+        .digest("hex");
+      const signature = crypto.sign(
+        null,
+        Buffer.from(checksum + "\n"),
         privateKey
       );
 
