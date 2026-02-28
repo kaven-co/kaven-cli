@@ -186,20 +186,20 @@ export async function modulePublish(options: PublishOptions): Promise<void> {
 
   // 4. Sign the checksum
   const signSpinner = ora("Signing package...").start();
-  let signatureHex: string;
+  let signatureBase64: string;
   let publicKeyBase64: string;
   try {
     const { privateKey, publicKey } = await getSigningKey();
     const signature = crypto.sign(
       null, Buffer.from(checksum), privateKey
     );
-    signatureHex = signature.toString("hex");
+    signatureBase64 = signature.toString("base64");
     const publicKeyDer = publicKey.export({
       type: "spki", format: "der",
     });
     publicKeyBase64 = (publicKeyDer as Buffer).toString("base64");
     signSpinner.succeed(
-      `Package signed (${signatureHex.substring(0, 16)}...)`
+      `Package signed (${signatureBase64.substring(0, 16)}...)`
     );
   } catch {
     signSpinner.fail("Failed to sign package");
@@ -295,7 +295,7 @@ export async function modulePublish(options: PublishOptions): Promise<void> {
       version: moduleJson.version,
       s3Key,
       checksum,
-      signature: signatureHex,
+      signature: signatureBase64,
       publicKey: publicKeyBase64,
       changelog: options.changelog,
     });
