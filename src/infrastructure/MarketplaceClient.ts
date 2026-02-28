@@ -79,6 +79,12 @@ export class MarketplaceClient {
     this.baseURLPromise = resolveBaseUrl();
   }
 
+  /** Resolve a relative API path to an absolute URL. */
+  async resolveUrl(path: string): Promise<string> {
+    const baseURL = await this.baseURLPromise;
+    return `${baseURL}${path}`;
+  }
+
   // ──────────────────────────────────────────────────────────
   // Core HTTP helpers
   // ──────────────────────────────────────────────────────────
@@ -349,18 +355,14 @@ export class MarketplaceClient {
     const query = params.toString();
     const endpoint = `/modules${query ? `?${query}` : ""}`;
 
-    return this.request<PaginatedResponse<Module>>("GET", endpoint, {
-      authenticated: true,
-    });
+    return this.request<PaginatedResponse<Module>>("GET", endpoint);
   }
 
   /**
    * Get a single module by slug.
    */
   async getModule(slug: string): Promise<Module> {
-    return this.request<Module>("GET", `/modules/${slug}`, {
-      authenticated: true,
-    });
+    return this.request<Module>("GET", `/modules/${slug}`);
   }
 
   /**
@@ -369,8 +371,7 @@ export class MarketplaceClient {
   async getManifest(slug: string, version: string): Promise<ModuleManifest> {
     return this.request<ModuleManifest>(
       "GET",
-      `/modules/${slug}/versions/${version}/manifest`,
-      { authenticated: true }
+      `/modules/${slug}/versions/${version}/manifest`
     );
   }
 
@@ -378,11 +379,11 @@ export class MarketplaceClient {
    * Create a download token for a module release.
    */
   async createDownloadToken(
-    moduleId: string,
-    releaseId: string
+    moduleSlug: string,
+    version: string
   ): Promise<DownloadToken> {
     return this.request<DownloadToken>("POST", "/download-tokens", {
-      body: { moduleId, releaseId },
+      body: { moduleSlug, version },
       authenticated: true,
     });
   }
@@ -449,8 +450,7 @@ export class MarketplaceClient {
   ): Promise<ModuleRelease> {
     return this.request<ModuleRelease>(
       "GET",
-      `/modules/${slug}/releases/${version}`,
-      { authenticated: true }
+      `/modules/${slug}/versions/${version}`
     );
   }
 

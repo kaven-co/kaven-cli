@@ -5,7 +5,7 @@ import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
 import { AuthService } from "../../core/AuthService";
 import { NetworkError } from "../../infrastructure/errors";
 import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
-import type { Module } from "../../types/marketplace";
+
 
 export interface MarketplaceListOptions {
   category?: string;
@@ -15,16 +15,16 @@ export interface MarketplaceListOptions {
   json?: boolean;
 }
 
-function colorTier(tier: Module["tier"]): string {
-  switch (tier) {
+function colorTier(tier: string): string {
+  switch (tier.toLowerCase()) {
     case "starter":
-      return chalk.green(tier);
+      return chalk.green(tier.toLowerCase());
     case "complete":
-      return chalk.yellow(tier);
+      return chalk.yellow(tier.toLowerCase());
     case "pro":
-      return chalk.magenta(tier);
+      return chalk.magenta(tier.toLowerCase());
     case "enterprise":
-      return chalk.blue(tier);
+      return chalk.blue(tier.toLowerCase());
     default:
       return tier;
   }
@@ -67,7 +67,16 @@ export async function marketplaceList(
     spinner.stop();
 
     const modules = result.data;
-    const total = result.total;
+    type PaginationMeta = {
+      page?: number;
+      limit?: number;
+      total?: number;
+      totalPages?: number;
+    };
+    const meta = (
+      result as typeof result & { meta?: PaginationMeta }
+    ).meta;
+    const total = result.total ?? meta?.total ?? modules.length;
 
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));
@@ -118,8 +127,8 @@ export async function marketplaceList(
       table.push([
         chalk.cyan(mod.slug),
         chalk.white(mod.name),
-        chalk.green(mod.latestVersion),
-        colorTier(mod.tier),
+        chalk.green(mod.latestVersion ?? "—"),
+        colorTier(mod.requiredTier ?? mod.tier ?? ""),
         chalk.gray(String(mod.installCount)),
       ]);
     }

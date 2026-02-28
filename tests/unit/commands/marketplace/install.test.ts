@@ -45,6 +45,7 @@ vi.mock("../../../../src/infrastructure/MarketplaceClient", () => ({
     getModule: vi.fn(),
     createDownloadToken: vi.fn(),
     getReleaseInfo: vi.fn(),
+    resolveUrl: vi.fn((p: string) => Promise.resolve(`https://api.kaven.sh${p}`)),
   })),
 }));
 
@@ -115,7 +116,7 @@ function makeDownloadToken(overrides: Partial<DownloadToken> = {}): DownloadToke
   return {
     token: "tok_test_abc123",
     expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    downloadUrl: "https://dl.kaven.sh/modules/payments-1.2.0.tar.gz",
+    downloadUrl: "/artifacts/tok_test_abc123",
     ...overrides,
   };
 }
@@ -215,6 +216,7 @@ describe("marketplaceInstall (C1.5)", () => {
       getModule: mockGetModule,
       createDownloadToken: mockCreateDownloadToken,
       getReleaseInfo: mockGetReleaseInfo,
+      resolveUrl: vi.fn((p: string) => Promise.resolve(`https://api.kaven.sh${p}`)),
     }));
 
     (ModuleInstaller as ReturnType<typeof vi.fn>).mockImplementation(() => ({
@@ -333,10 +335,12 @@ describe("marketplaceInstall (C1.5)", () => {
 
     expect(mockGetModule).toHaveBeenCalledWith("payments");
     expect(mockCreateDownloadToken).toHaveBeenCalledWith(
-      module.id,
+      "payments",
       module.latestVersion
     );
-    expect(fetchSpy).toHaveBeenCalledWith(token.downloadUrl);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      `https://api.kaven.sh${token.downloadUrl}`
+    );
     expect(tarModule.x).toHaveBeenCalled();
     expect(mockInstall).toHaveBeenCalled();
     expect(processExitSpy).not.toHaveBeenCalled();
@@ -348,7 +352,7 @@ describe("marketplaceInstall (C1.5)", () => {
 
     await marketplaceInstall("payments", { version: "1.0.0" });
 
-    expect(mockCreateDownloadToken).toHaveBeenCalledWith(module.id, "1.0.0");
+    expect(mockCreateDownloadToken).toHaveBeenCalledWith("payments", "1.0.0");
   });
 
   it("shows download size from Content-Length header in spinner text", async () => {
