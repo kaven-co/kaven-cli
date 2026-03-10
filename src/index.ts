@@ -36,7 +36,7 @@ Examples:
   $ kaven upgrade                   Upgrade your license tier
   $ kaven module doctor             Check project health
 
-Documentation: https://docs.kaven.sh/cli
+Documentation: https://docs.kaven.site/cli
 Support:       https://github.com/kaven-co/kaven-cli/issues
 `
     );

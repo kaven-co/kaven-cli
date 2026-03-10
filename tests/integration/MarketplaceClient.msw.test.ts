@@ -18,7 +18,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
 
   it('throws AuthenticationError on 401', async () => {
     mockServer.use(
-      http.get('https://api.kaven.sh/modules', () =>
+      http.get('https://api.kaven.site/modules', () =>
         HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
       )
     );
@@ -28,7 +28,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
 
   it('throws NotFoundError on 404', async () => {
     mockServer.use(
-      http.get('https://api.kaven.sh/modules/:slug', () =>
+      http.get('https://api.kaven.site/modules/:slug', () =>
         HttpResponse.json({ message: 'Not Found' }, { status: 404 })
       )
     );
@@ -38,7 +38,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
 
   it('throws RateLimitError on 429', async () => {
     mockServer.use(
-      http.get('https://api.kaven.sh/modules', () =>
+      http.get('https://api.kaven.site/modules', () =>
         HttpResponse.json({ message: 'Too Many Requests', retryAfter: 60 }, { status: 429 })
       )
     );
@@ -49,7 +49,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
   it('retries on 500 and succeeds', async () => {
     let callCount = 0;
     mockServer.use(
-      http.get('https://api.kaven.sh/modules', () => {
+      http.get('https://api.kaven.site/modules', () => {
         callCount++;
         if (callCount < 3) return new HttpResponse(null, { status: 500 });
         return HttpResponse.json({
