@@ -265,5 +265,5 @@ Apache 2.0 — see [LICENSE](LICENSE)
 
 ---
 
-Documentation: https://docs.kaven.sh/cli
+Documentation: https://docs.kaven.site/cli
 GitHub: https://github.com/kaven-co/kaven-cli

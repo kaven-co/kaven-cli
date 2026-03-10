@@ -195,7 +195,7 @@ export async function initProject(
   console.log();
   console.log(
     chalk.gray(
-      "For more help, visit: https://docs.kaven.sh/getting-started"
+      "For more help, visit: https://docs.kaven.site/getting-started"
     )
   );
 

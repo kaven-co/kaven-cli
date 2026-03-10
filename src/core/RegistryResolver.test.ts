@@ -25,7 +25,7 @@ describe("C2.5: Remote Registry Support", () => {
     const resolver = new RegistryResolver();
     const registry = await resolver.getActiveRegistry();
 
-    expect(registry).toBe("https://marketplace.kaven.sh");
+    expect(registry).toBe("https://marketplace.kaven.site");
   });
 
   it("C2.5.2: Should validate registry URL format", async () => {
@@ -45,7 +45,7 @@ describe("C2.5: Remote Registry Support", () => {
 
     expect(registries).toHaveProperty("default");
     expect(registries).toHaveProperty("active");
-    expect(registries.default).toBe("https://marketplace.kaven.sh");
+    expect(registries.default).toBe("https://marketplace.kaven.site");
   });
 
   it("C2.5.4: Should reset to default registry", async () => {
@@ -57,6 +57,6 @@ describe("C2.5: Remote Registry Support", () => {
 
     const registries = await resolver.listRegistries();
     expect(registries.custom).toBeUndefined();
-    expect(registries.active).toBe("https://marketplace.kaven.sh");
+    expect(registries.active).toBe("https://marketplace.kaven.site");
   });
 });
