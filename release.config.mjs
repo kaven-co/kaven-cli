@@ -2,15 +2,20 @@
  * Semantic Release configuration for kaven-cli.
  *
  * Channel strategy:
- *  - main branch → publishes to npm tag "alpha" (pre-release channel)
- *  - When ready to go stable: change branch config to remove prerelease flag
+ *  - main branch → publishes to npm dist-tag "alpha"
+ *    (users install with: npm install kaven-cli@alpha)
+ *  - When ready to go stable: remove the `channel` property
+ *
+ * Note: `prerelease` flag is intentionally absent.
+ * semantic-release v25 requires at least one non-prerelease release branch.
+ * Using `channel: 'alpha'` achieves the same distribution goal (alpha dist-tag)
+ * without the single-branch limitation. Version numbers are clean semver (e.g. 0.5.0).
  */
 
 export default {
   branches: [
     {
       name: 'main',
-      prerelease: 'alpha',
       channel: 'alpha',
     },
   ],
