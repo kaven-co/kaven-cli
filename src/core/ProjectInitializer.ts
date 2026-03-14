@@ -118,6 +118,15 @@ export class ProjectInitializer {
       await fs.writeFile(filePath, content, "utf-8");
     }
 
+    // Safety net: directly update root package.json name field regardless of placeholder
+    const pkgPath = path.join(targetDir, "package.json");
+    if (await fs.pathExists(pkgPath)) {
+      const pkg = await fs.readJson(pkgPath);
+      if (pkg.name !== values.projectName) {
+        pkg.name = values.projectName;
+        await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+      }
+    }
   }
 
   /** Run pnpm install in the target directory. */
