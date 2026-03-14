@@ -19,15 +19,10 @@ describe("ModuleDoctor", () => {
 
     // Setup estrutura padrão esperada pela CLI
     await fs.ensureDir(path.join(testDir, "apps/api/src"));
-    await fs.ensureDir(path.join(testDir, "apps/admin/app"));
 
     await fs.writeFile(
-      path.join(testDir, "apps/api/src/index.ts"),
-      "// [ANCHOR:ROUTES]\n// [ANCHOR:MIDDLEWARE]\n",
-    );
-    await fs.writeFile(
-      path.join(testDir, "apps/admin/app/layout.tsx"),
-      "// [ANCHOR:NAV_ITEMS]\n",
+      path.join(testDir, "apps/api/src/app.ts"),
+      "// [KAVEN_MODULE_IMPORTS]\n// [KAVEN_MODULE_HOOKS]\n// [KAVEN_MODULE_REGISTRATION]\n",
     );
 
     const markerService = new MarkerService();
@@ -47,22 +42,22 @@ describe("ModuleDoctor", () => {
 
   it("should detect missing anchor", async () => {
     await fs.writeFile(
-      path.join(testDir, "apps/api/src/index.ts"),
-      "// Only one anchor\n// [ANCHOR:ROUTES]\n",
+      path.join(testDir, "apps/api/src/app.ts"),
+      "// Only one anchor\n// [KAVEN_MODULE_IMPORTS]\n",
     );
 
     const results = await doctor.checkAnchors();
-    const middlewareError = results.find((r) =>
-      r.message.includes("ANCHOR:MIDDLEWARE"),
+    const missingHooksError = results.find((r) =>
+      r.message.includes("KAVEN_MODULE_HOOKS"),
     );
 
-    expect(middlewareError).toBeDefined();
-    expect(middlewareError!.severity).toBe("error");
+    expect(missingHooksError).toBeDefined();
+    expect(missingHooksError!.severity).toBe("error");
   });
 
   it("should detect missing module injection", async () => {
-    // Configurar kaven.config.json
-    await fs.writeJSON(path.join(testDir, "kaven.config.json"), {
+    // Configurar kaven.json
+    await fs.writeJSON(path.join(testDir, "kaven.json"), {
       modules: [{ name: "payments", version: "1.0.0", installed: true }],
     });
 
@@ -76,8 +71,8 @@ describe("ModuleDoctor", () => {
       files: { backend: [] },
       injections: [
         {
-          file: "apps/api/src/index.ts",
-          anchor: "// [ANCHOR:ROUTES]",
+          file: "apps/api/src/app.ts",
+          anchor: "// [KAVEN_MODULE_IMPORTS]",
           moduleName: "payments",
           code: "some code",
         },
@@ -86,7 +81,7 @@ describe("ModuleDoctor", () => {
       env: [],
     });
 
-    // O arquivo index.ts tem a âncora mas NÃO tem o código injetado (marcas BEGIN/END)
+    // O arquivo app.ts tem a âncora mas NÃO tem o código injetado (marcas BEGIN/END)
     const results = await doctor.checkMarkers();
     const missingInjection = results.find((r) =>
       r.message.includes("not injected"),
@@ -97,7 +92,7 @@ describe("ModuleDoctor", () => {
   });
 
   it("should detect missing npm dependencies", async () => {
-    await fs.writeJSON(path.join(testDir, "kaven.config.json"), {
+    await fs.writeJSON(path.join(testDir, "kaven.json"), {
       modules: [{ name: "payments", version: "1.0.0", installed: true }],
     });
 
