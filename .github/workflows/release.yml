@@ -47,3 +47,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+          # pnpm/action-setup sets NPM_CONFIG_USERCONFIG to its own temp .npmrc.
+          # @semantic-release/npm writes the OIDC token to ~/.npmrc (home dir).
+          # Override here so npm publish reads from the same file as semantic-release writes to.
+          NPM_CONFIG_USERCONFIG: /home/runner/.npmrc
