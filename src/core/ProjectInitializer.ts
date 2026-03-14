@@ -7,6 +7,7 @@ export interface InitOptions {
   skipInstall?: boolean;
   skipGit?: boolean;
   force?: boolean;
+  withSquad?: boolean;
   dbUrl?: string;
   emailProvider?: string;
   locale?: string;
@@ -21,6 +22,7 @@ export interface InitPromptAnswers {
 }
 
 const TEMPLATE_REPO = "https://github.com/kaven-co/kaven-template.git";
+const KAVEN_SQUAD_REPO = "https://github.com/bychrisr/kaven-squad";
 
 /** Run a shell command via spawn, returning exit code. */
 function runCommand(
@@ -99,7 +101,7 @@ export class ProjectInitializer {
     const filesToProcess = [
       "package.json",
       ".env.example",
-      "prisma/schema.prisma",
+      "packages/database/prisma/schema.prisma",
       "apps/api/package.json",
       "apps/admin/package.json",
       "apps/tenant/package.json",
@@ -115,6 +117,7 @@ export class ProjectInitializer {
       }
       await fs.writeFile(filePath, content, "utf-8");
     }
+
   }
 
   /** Run pnpm install in the target directory. */
@@ -136,6 +139,46 @@ export class ProjectInitializer {
     );
   }
 
+  /**
+   * Clone kaven-squad into squads/kaven-squad/ inside the project.
+   * Returns { installed: true } on success, { installed: false, reason } on failure.
+   * Never throws — squad installation is non-fatal.
+   */
+  async installSquad(
+    targetDir: string
+  ): Promise<{ installed: boolean; reason?: string }> {
+    const squadsDir = path.join(targetDir, "squads");
+    const squadDir = path.join(squadsDir, "kaven-squad");
+
+    // Squad already present — skip
+    if (await fs.pathExists(squadDir)) {
+      return { installed: false, reason: "already-exists" };
+    }
+
+    await fs.ensureDir(squadsDir);
+
+    const exitCode = await runCommand(
+      "git",
+      ["clone", "--depth", "1", KAVEN_SQUAD_REPO, squadDir],
+      process.cwd()
+    );
+
+    if (exitCode !== 0) {
+      return {
+        installed: false,
+        reason: `git clone exited with code ${exitCode}`,
+      };
+    }
+
+    // Remove .git — squad history not needed in user project
+    const squadGitDir = path.join(squadDir, ".git");
+    if (await fs.pathExists(squadGitDir)) {
+      await fs.remove(squadGitDir);
+    }
+
+    return { installed: true };
+  }
+
   /** Health check after project initialization. */
   async healthCheck(
     targetDir: string
@@ -143,7 +186,7 @@ export class ProjectInitializer {
     const issues: string[] = [];
 
     // Check key files exist
-    const requiredFiles = ["package.json", ".env.example", "prisma/schema.prisma"];
+    const requiredFiles = ["package.json", ".env.example", "packages/database/prisma/schema.prisma"];
     for (const file of requiredFiles) {
       if (!(await fs.pathExists(path.join(targetDir, file)))) {
         issues.push(`Missing required file: ${file}`);
