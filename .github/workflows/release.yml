@@ -36,6 +36,9 @@ jobs:
           cache: 'pnpm'
           # Note: no registry-url — @semantic-release/npm handles npm auth via OIDC internally
 
+      - name: Upgrade npm (OIDC Trusted Publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
@@ -47,7 +50,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
-          # pnpm/action-setup sets NPM_CONFIG_USERCONFIG to its own temp .npmrc.
-          # @semantic-release/npm writes the OIDC token to ~/.npmrc (home dir).
-          # Override here so npm publish reads from the same file as semantic-release writes to.
-          NPM_CONFIG_USERCONFIG: /home/runner/.npmrc
