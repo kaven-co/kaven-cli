@@ -100,7 +100,7 @@ export async function upgradeCommand(options: UpgradeOptions): Promise<void> {
   }
 
   // 4. Show tier comparison table (imported from license command)
-  const { printTierComparisonTable } = await import("../license/tier-table");
+  const { printTierComparisonTable } = await import("../license/tier-table.js");
   printTierComparisonTable(currentTier, "pro");
   console.log();
 

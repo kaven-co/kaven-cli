@@ -115,7 +115,7 @@ export async function initProject(
   // Clone template
   const cloneSpinner = ora("Cloning kaven-template...").start();
   try {
-    await initializer.cloneTemplate(targetDir);
+    await initializer.cloneTemplate(targetDir, options.template);
     cloneSpinner.succeed("Template cloned successfully");
   } catch (error) {
     cloneSpinner.fail("Failed to clone template");
@@ -171,6 +171,27 @@ export async function initProject(
     }
   }
 
+  // Install kaven-squad (optional, non-fatal)
+  if (options.withSquad) {
+    const squadSpinner = ora("Installing kaven-squad...").start();
+    const squadResult = await initializer.installSquad(targetDir);
+
+    if (squadResult.installed) {
+      squadSpinner.succeed("kaven-squad installed in squads/kaven-squad/");
+    } else if (squadResult.reason === "already-exists") {
+      squadSpinner.info("kaven-squad already installed — skipping");
+    } else {
+      squadSpinner.warn(
+        `Could not install kaven-squad automatically (${squadResult.reason})`
+      );
+      console.log(
+        chalk.yellow(
+          "  ⚠  Install manually inside the project: *download-squad kaven-squad"
+        )
+      );
+    }
+  }
+
   // Health check
   const healthCheckSpinner = ora("Running health check...").start();
   const health = await initializer.healthCheck(targetDir);
@@ -198,6 +219,21 @@ export async function initProject(
       "For more help, visit: https://docs.kaven.site/getting-started"
     )
   );
+
+  if (options.withSquad) {
+    console.log();
+    console.log(chalk.bold("AIOX Squad next step:"));
+    console.log(
+      chalk.cyan(
+        "  node /path/to/aiox-core/bin/aiox.js install --quiet --merge"
+      )
+    );
+    console.log(
+      chalk.gray(
+        "  (replace /path/to/aiox-core with your AIOX installation path)"
+      )
+    );
+  }
 
   // Save project defaults to config for future use
   await configManager.initialize();

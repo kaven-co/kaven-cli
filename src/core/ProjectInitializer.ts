@@ -12,6 +12,7 @@ export interface InitOptions {
   emailProvider?: string;
   locale?: string;
   currency?: string;
+  template?: string;
 }
 
 export interface InitPromptAnswers {
@@ -65,11 +66,25 @@ export class ProjectInitializer {
     return { valid: true };
   }
 
-  /** Clone the template repo with --depth 1 into targetDir. */
-  async cloneTemplate(targetDir: string): Promise<void> {
+  /** Clone the template (from Git or local path) into targetDir. */
+  async cloneTemplate(targetDir: string, templateSource?: string): Promise<void> {
+    const source = templateSource || TEMPLATE_REPO;
+    console.log(`[INIT] Clone Source: ${source}`);
+    console.log(`[INIT] Target Dir: ${targetDir}`);
+    
+    // If it's a local path that exists, copy it instead of cloning
+    if (await fs.pathExists(source) && (source.startsWith("/") || source.startsWith("./") || source.startsWith("../"))) {
+      console.log(`[INIT] Local Path Detected. Copying...`);
+      await fs.copy(source, targetDir, {
+        filter: (src) => !src.includes("node_modules") && !src.includes(".git") && !src.includes(".turbo")
+      });
+      console.log(`[INIT] Local Copy Done.`);
+      return;
+    }
+
     const exitCode = await runCommand(
       "git",
-      ["clone", "--depth", "1", TEMPLATE_REPO, targetDir],
+      ["clone", "--depth", "1", source, targetDir],
       process.cwd()
     );
 

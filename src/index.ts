@@ -4,6 +4,11 @@ import { moduleDoctor } from "./commands/module/doctor";
 import { moduleAdd } from "./commands/module/add";
 import { moduleRemove } from "./commands/module/remove";
 import { modulePublish } from "./commands/module/publish";
+import {
+  moduleActivate,
+  moduleDeactivate,
+  moduleListActivation,
+} from "./commands/module/activate";
 import { authLogin } from "./commands/auth/login";
 import { authLogout } from "./commands/auth/logout";
 import { authWhoami } from "./commands/auth/whoami";
@@ -16,6 +21,7 @@ import { initProject } from "./commands/init/index";
 import { upgradeCommand, upgradeCheck, upgradeInstall } from "./commands/upgrade/index";
 import { cacheStatus, cacheClear } from "./commands/cache/index";
 import { configSet, configGet, configView, configReset } from "./commands/config/index";
+import { configFeatures, type FeatureTier } from "./commands/config/features";
 import { initCi } from "./commands/init-ci/index";
 
 export const main = () => {
@@ -53,6 +59,8 @@ Support:       https://github.com/kaven-co/kaven-cli/issues
     .option("--skip-install", "Skip running pnpm install after setup")
     .option("--skip-git", "Skip git init and initial commit")
     .option("--force", "Overwrite existing directory if it exists")
+    .option("--template <path>", "Path to a local template or custom git repository URL")
+    .option("--with-squad", "Install kaven-squad (AIOX) into squads/kaven-squad/ after scaffold")
     .addHelpText(
       "after",
       `
@@ -60,6 +68,7 @@ Examples:
   $ kaven init my-app               Interactive setup
   $ kaven init my-app --defaults    Use defaults (no prompts)
   $ kaven init my-app --skip-git   Skip git initialization
+  $ kaven init my-app --with-squad  Install kaven-squad for AIOX integration
 `
     )
     .action((name, opts) =>
@@ -68,6 +77,8 @@ Examples:
         skipInstall: opts.skipInstall,
         skipGit: opts.skipGit,
         force: opts.force,
+        template: opts.template,
+        withSquad: opts.withSquad,
       })
     );
 
@@ -77,7 +88,7 @@ Examples:
   const moduleCommand = program
     .command("module")
     .alias("m")
-    .description("Manage Kaven modules: install, remove, publish, and diagnose")
+    .description("Manage Kaven modules: install, remove, publish, activate, and diagnose")
     .addHelpText(
       "after",
       `
@@ -87,6 +98,9 @@ Examples:
   $ kaven module add ./my-module    Install a local module
   $ kaven module remove payments    Remove a module
   $ kaven module publish            Publish module to marketplace
+  $ kaven module list               List schema modules and their status
+  $ kaven module activate billing   Activate schema module (uncomment models)
+  $ kaven module deactivate billing Deactivate schema module (comment models)
 `
     );
 
@@ -165,6 +179,57 @@ Examples:
         changelog: opts.changelog,
       })
     );
+
+  moduleCommand
+    .command("activate <name> [root]")
+    .description(
+      "Activate a Kaven schema module by uncommenting its models in schema.extended.prisma"
+    )
+    .addHelpText(
+      "after",
+      `
+Modules: billing, projects, notifications
+
+Examples:
+  $ kaven module activate billing
+  $ kaven module activate projects
+  $ kaven module activate projects ./my-app
+`
+    )
+    .action((name, root) => moduleActivate(name, root));
+
+  moduleCommand
+    .command("deactivate <name> [root]")
+    .description(
+      "Deactivate a Kaven schema module by commenting its models in schema.extended.prisma"
+    )
+    .addHelpText(
+      "after",
+      `
+Modules: billing, projects, notifications
+
+Examples:
+  $ kaven module deactivate billing
+  $ kaven module deactivate projects
+  $ kaven module deactivate projects ./my-app
+`
+    )
+    .action((name, root) => moduleDeactivate(name, root));
+
+  moduleCommand
+    .command("list [root]")
+    .description(
+      "List available Kaven schema modules with their status, models, and dependencies"
+    )
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ kaven module list
+  $ kaven module list ./my-app
+`
+    )
+    .action((root) => moduleListActivation(root));
 
   /**
    * Auth Group
@@ -382,6 +447,9 @@ Examples:
   $ kaven config get registry
   $ kaven config view
   $ kaven config reset
+  $ kaven config features
+  $ kaven config features --tier complete
+  $ kaven config features --list
 `
     );
 
@@ -406,6 +474,38 @@ Examples:
     .command("reset")
     .description("Reset configuration to defaults")
     .action(() => configReset());
+
+  configCommand
+    .command("features")
+    .description(
+      "Interactive TUI to select and configure the 60 framework capabilities (feature flags)"
+    )
+    .option(
+      "--tier <tier>",
+      "Apply a preset tier directly without prompts: starter | complete | pro | enterprise"
+    )
+    .option("--list", "List all available capabilities grouped by category, without modifying anything")
+    .addHelpText(
+      "after",
+      `
+Output: packages/database/prisma/seeds/capabilities.seed.ts (relative to cwd)
+
+Examples:
+  $ kaven config features                  Interactive TUI (select tier + customize)
+  $ kaven config features --tier complete  Apply Complete preset non-interactively
+  $ kaven config features --tier enterprise Apply all 60 capabilities
+  $ kaven config features --list           Show capability catalog without writing
+
+After generating the seed file:
+  $ pnpm prisma db seed
+`
+    )
+    .action((opts) =>
+      configFeatures({
+        tier: opts.tier as FeatureTier | undefined,
+        list: opts.list ?? false,
+      })
+    );
 
   /**
    * Init CI — Initialize CI/CD workflows
