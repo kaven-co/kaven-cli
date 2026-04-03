@@ -28,7 +28,7 @@ export class RegistryResolver {
     const client = new MarketplaceClient(this.authService);
 
     // Set custom registry if configured
-    if (registry !== "https://marketplace.kaven.sh") {
+    if (registry !== "https://marketplace.kaven.site") {
       (client as unknown as Record<string, string>).baseUrl = registry;
     }
 
@@ -100,7 +100,7 @@ export class RegistryResolver {
     const config = configManager.getAll();
 
     return {
-      default: config.registry || "https://marketplace.kaven.sh",
+      default: config.registry || "https://marketplace.kaven.site",
       custom: config.customRegistry,
       active: await this.getActiveRegistry(),
     };

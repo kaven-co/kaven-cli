@@ -323,7 +323,7 @@ export async function modulePublish(options: PublishOptions): Promise<void> {
   );
   console.log(
     chalk.gray(
-      `View your module at: https://marketplace.kaven.sh/modules/${moduleJson.slug}`
+      `View your module at: https://marketplace.kaven.site/modules/${moduleJson.slug}`
     )
   );
 

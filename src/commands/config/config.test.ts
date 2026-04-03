@@ -28,7 +28,7 @@ describe("C2.4: Config Management", () => {
     const manager = new ConfigManager();
     await manager.initialize();
 
-    expect(manager.get("registry")).toBe("https://marketplace.kaven.sh");
+    expect(manager.get("registry")).toBe("https://marketplace.kaven.site");
     expect(manager.get("telemetry")).toBe(true);
     expect(manager.get("theme")).toBe("dark");
   });

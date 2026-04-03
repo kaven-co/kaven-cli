@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { createTestJwt } from './jwt.js';
 
 export const mockServer = setupServer(
-  http.post('https://api.kaven.sh/auth/device-code', () =>
+  http.post('https://marketplace.kaven.site/auth/device-code', () =>
     HttpResponse.json({
       device_code: 'test-device-code',
       user_code: 'TEST-1234',
@@ -13,7 +13,7 @@ export const mockServer = setupServer(
     })
   ),
 
-  http.post('https://api.kaven.sh/auth/token', () =>
+  http.post('https://marketplace.kaven.site/auth/token', () =>
     HttpResponse.json({
       access_token: createTestJwt({ email: 'test@kaven.sh', tier: 'COMPLETE' }),
       refresh_token: 'test-refresh-token',
@@ -21,14 +21,14 @@ export const mockServer = setupServer(
     })
   ),
 
-  http.post('https://api.kaven.sh/auth/refresh', () =>
+  http.post('https://marketplace.kaven.site/auth/refresh', () =>
     HttpResponse.json({
       access_token: createTestJwt({ email: 'test@kaven.sh', tier: 'COMPLETE' }),
       refresh_token: 'new-refresh-token',
     })
   ),
 
-  http.get('https://api.kaven.sh/modules', () =>
+  http.get('https://marketplace.kaven.site/modules', () =>
     HttpResponse.json({
       data: [
         { id: '1', slug: 'payments', name: 'Payments', version: '1.2.0', tier: 'COMPLETE', installCount: 2300, category: 'billing' },
@@ -38,13 +38,13 @@ export const mockServer = setupServer(
     })
   ),
 
-  http.get('https://api.kaven.sh/modules/:slug', ({ params }) =>
+  http.get('https://marketplace.kaven.site/modules/:slug', ({ params }) =>
     HttpResponse.json({
       id: '1', slug: params.slug, name: 'Test Module', version: '1.0.0', tier: 'STARTER', category: 'devtools',
     })
   ),
 
-  http.post('https://api.kaven.sh/download-tokens', () =>
+  http.post('https://marketplace.kaven.site/download-tokens', () =>
     HttpResponse.json({
       token: 'dl-test-token',
       artifactUrl: 'https://artifacts.kaven.sh/test.tar.gz',
@@ -52,11 +52,11 @@ export const mockServer = setupServer(
     })
   ),
 
-  http.post('https://api.kaven.sh/licenses/validate', () =>
+  http.post('https://marketplace.kaven.site/licenses/validate', () =>
     HttpResponse.json({ valid: true, tier: 'COMPLETE', expiresAt: null })
   ),
 
-  http.get('https://api.kaven.sh/licenses/status', () =>
+  http.get('https://marketplace.kaven.site/licenses/status', () =>
     HttpResponse.json({
       key: 'KAVEN-COMPLETE-ABCD1234-XY',
       tier: 'COMPLETE',

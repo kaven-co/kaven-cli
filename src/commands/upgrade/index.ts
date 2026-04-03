@@ -117,7 +117,7 @@ export async function upgradeCommand(options: UpgradeOptions): Promise<void> {
       )
     );
     console.log(
-      chalk.gray("For Enterprise plans, contact: enterprise@kaven.sh")
+      chalk.gray("For Enterprise plans, contact: enterprise@kaven.site")
     );
     return;
   }
@@ -214,7 +214,7 @@ export async function upgradeCommand(options: UpgradeOptions): Promise<void> {
       if (status.status === "failed") {
         pollSpinner.fail("Payment failed.");
         console.log(
-          chalk.gray("Please try again or contact support@kaven.sh")
+          chalk.gray("Please try again or contact support@kaven.site")
         );
         process.exit(1);
         return;
@@ -236,7 +236,7 @@ export async function upgradeCommand(options: UpgradeOptions): Promise<void> {
   );
   console.log(
     chalk.gray(
-      "Check your upgrade status at: https://dashboard.kaven.sh/billing"
+      "Check your upgrade status at: https://dashboard.kaven.site/billing"
     )
   );
 }
