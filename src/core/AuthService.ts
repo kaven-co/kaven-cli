@@ -164,7 +164,7 @@ export class AuthService {
     try {
       // Lazy import to avoid circular dependency at module level
       const { MarketplaceClient } = await import(
-        "../infrastructure/MarketplaceClient"
+        "../infrastructure/MarketplaceClient.js"
       );
       const client = new MarketplaceClient(this);
       const refreshed = await client.refreshToken(auth.refresh_token);
