@@ -21,7 +21,7 @@ import {
 } from "./errors";
 import type { AuthService } from "../core/AuthService";
 
-const DEFAULT_BASE_URL = "https://api.kaven.sh";
+const DEFAULT_BASE_URL = "https://marketplace.kaven.site";
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1_000;

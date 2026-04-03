@@ -7,7 +7,7 @@ const CONFIG_DIR = path.join(os.homedir(), ".kaven");
 const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 
 export const configSchema = z.object({
-  registry: z.string().url().default("https://marketplace.kaven.sh"),
+  registry: z.string().url().default("https://marketplace.kaven.site"),
   telemetry: z.boolean().default(true),
   theme: z.enum(["light", "dark"]).default("dark"),
   locale: z.string().default("en-US"),
@@ -32,7 +32,7 @@ export class ConfigManager {
 
   constructor() {
     this.config = {
-      registry: "https://marketplace.kaven.sh",
+      registry: "https://marketplace.kaven.site",
       telemetry: true,
       theme: "dark",
       locale: "en-US",
@@ -50,7 +50,7 @@ export class ConfigManager {
         } else {
           // If validation fails, use defaults
           this.config = {
-            registry: "https://marketplace.kaven.sh",
+            registry: "https://marketplace.kaven.site",
             telemetry: true,
             theme: "dark",
             locale: "en-US",
@@ -59,7 +59,7 @@ export class ConfigManager {
       } catch {
         // If file is corrupted, start fresh
         this.config = {
-          registry: "https://marketplace.kaven.sh",
+          registry: "https://marketplace.kaven.site",
           telemetry: true,
           theme: "dark",
           locale: "en-US",
@@ -68,7 +68,7 @@ export class ConfigManager {
     } else {
       // Initialize with defaults
       this.config = {
-        registry: "https://marketplace.kaven.sh",
+        registry: "https://marketplace.kaven.site",
         telemetry: true,
         theme: "dark",
         locale: "en-US",
@@ -131,7 +131,7 @@ export class ConfigManager {
    */
   async reset(): Promise<void> {
     this.config = {
-      registry: "https://marketplace.kaven.sh",
+      registry: "https://marketplace.kaven.site",
       telemetry: true,
       theme: "dark",
       locale: "en-US",
@@ -151,7 +151,7 @@ export class ConfigManager {
    * Get registry URL (custom or default)
    */
   getRegistry(): string {
-    return (this.config.customRegistry || this.config.registry || "https://marketplace.kaven.sh") as string;
+    return (this.config.customRegistry || this.config.registry || "https://marketplace.kaven.site") as string;
   }
 
   /**
