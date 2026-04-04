@@ -3,6 +3,7 @@ import path from "path";
 import { spawn } from "child_process";
 
 export interface InitOptions {
+  skipAiox?: boolean;
   defaults?: boolean;
   skipInstall?: boolean;
   skipGit?: boolean;

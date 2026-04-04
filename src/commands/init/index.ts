@@ -8,6 +8,7 @@ import {
   InitPromptAnswers,
 } from "../../core/ProjectInitializer";
 import { configManager } from "../../core/ConfigManager";
+import { runEnvironmentBootstrap } from "./aiox-bootstrap";
 
 async function promptAnswers(projectName: string): Promise<InitPromptAnswers> {
   // Dynamic import to keep startup fast and avoid issues if not installed
@@ -208,6 +209,9 @@ export async function initProject(
 
   // Health check
   const healthCheckSpinner = ora("Running health check...").start();
+  // AIOX Environment Bootstrap
+  await runEnvironmentBootstrap(targetDir, { skipAiox: options.skipAiox });
+
   const health = await initializer.healthCheck(targetDir);
   if (health.healthy) {
     healthCheckSpinner.succeed("Health check passed");

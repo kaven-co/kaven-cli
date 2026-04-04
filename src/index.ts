@@ -23,6 +23,7 @@ import { cacheStatus, cacheClear } from "./commands/cache/index";
 import { configSet, configGet, configView, configReset } from "./commands/config/index";
 import { configFeatures, type FeatureTier } from "./commands/config/features";
 import { initCi } from "./commands/init-ci/index";
+import { registerAioxCommand } from "./commands/aiox";
 
 export const main = () => {
   const program = new Command();
@@ -30,7 +31,7 @@ export const main = () => {
   program
     .name("kaven")
     .description("The official CLI for the Kaven SaaS boilerplate ecosystem")
-    .version("0.2.0-alpha.1")
+    .version("0.4.1-alpha")
     .addHelpText(
       "after",
       `
@@ -61,6 +62,7 @@ Support:       https://github.com/kaven-co/kaven-cli/issues
     .option("--force", "Overwrite existing directory if it exists")
     .option("--template <path>", "Path to a local template or custom git repository URL")
     .option("--with-squad", "Install kaven-squad (AIOX) into squads/kaven-squad/ after scaffold")
+    .option("--skip-aiox", "Skip AIOX environment bootstrap")
     .addHelpText(
       "after",
       `
@@ -79,6 +81,7 @@ Examples:
         force: opts.force,
         template: opts.template,
         withSquad: opts.withSquad,
+        skipAiox: opts.skipAiox,
       })
     );
 
@@ -529,9 +532,15 @@ Examples:
     )
     .action((opts) => initCi({ dryRun: opts.dryRun }));
 
-  program.parse();
+  /**
+   * AIOX Commands
+   */
+  registerAioxCommand(program);
+
+  program.parse(process.argv);
 };
 
+// Execute main if this is the entry point
 if (require.main === module) {
   main();
 }
