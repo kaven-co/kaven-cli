@@ -188,6 +188,10 @@ Examples:
     .description(
       "Activate a Kaven schema module by uncommenting its models in schema.extended.prisma"
     )
+    .option("--with-deps", "Automatically activate required dependencies")
+    .option("--skip-migrate", "Skip db:generate and db:migrate after activation")
+    .option("--dry-run", "Show affected models without modifying schema")
+    .option("--yes", "Skip confirmation prompt")
     .addHelpText(
       "after",
       `
@@ -197,15 +201,19 @@ Examples:
   $ kaven module activate billing
   $ kaven module activate projects
   $ kaven module activate projects ./my-app
+  $ kaven module activate billing --with-deps
 `
     )
-    .action((name, root) => moduleActivate(name, root));
+    .action((name, root, opts) => moduleActivate(name, root, opts));
 
   moduleCommand
     .command("deactivate <name> [root]")
     .description(
       "Deactivate a Kaven schema module by commenting its models in schema.extended.prisma"
     )
+    .option("--skip-migrate", "Skip db:generate and db:migrate")
+    .option("--dry-run", "Show affected models without modifying schema")
+    .option("--yes", "Skip confirmation prompt")
     .addHelpText(
       "after",
       `
@@ -217,7 +225,7 @@ Examples:
   $ kaven module deactivate projects ./my-app
 `
     )
-    .action((name, root) => moduleDeactivate(name, root));
+    .action((name, root, opts) => moduleDeactivate(name, root, opts));
 
   moduleCommand
     .command("list [root]")
