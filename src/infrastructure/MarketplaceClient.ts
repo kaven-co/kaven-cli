@@ -256,7 +256,7 @@ export class MarketplaceClient {
    * Step 1 of Device Code Flow: Request device code from marketplace.
    */
   async requestDeviceCode(): Promise<DeviceCodeResponse> {
-    return this.request<DeviceCodeResponse>("POST", "/auth/device-code", {
+    return this.request<DeviceCodeResponse>("POST", "/api/auth/device-code", {
       body: { client_id: "kaven-cli" },
       authenticated: false,
     });
@@ -268,7 +268,7 @@ export class MarketplaceClient {
   async pollDeviceToken(deviceCode: string): Promise<TokenPollResult> {
     try {
       const baseURL = await this.baseURLPromise;
-      const url = `${baseURL}/auth/token`;
+      const url = `${baseURL}/api/auth/token`;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(
@@ -329,7 +329,7 @@ export class MarketplaceClient {
    * Refresh access token using refresh token.
    */
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    return this.request<RefreshTokenResponse>("POST", "/auth/refresh", {
+    return this.request<RefreshTokenResponse>("POST", "/api/auth/refresh", {
       body: { refresh_token: refreshToken },
       authenticated: false,
     });
