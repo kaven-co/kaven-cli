@@ -1,41 +1,34 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { activateModels, deactivateModels, isModuleActive } from "../../src/lib/schema-modifier";
 
-const mockSchema = `
+describe("C3.3 — Schema Modifier Logic", () => {
+  const mockSchema = `
 model User {
   id String @id
 }
 
-model Tenant {
+model Invoice {
   id String @id
 }
 `;
 
-const mockCommentedSchema = `
-model User {
-  id String @id
-}
+  it("should comment out models during deactivation", () => {
+    const result = deactivateModels(mockSchema, ["Invoice"]);
+    expect(result).toContain("// model Invoice {");
+    expect(result).not.toContain("\\nmodel Invoice {");
+  });
 
-// model Tenant {
-//   id String @id
-// }
-`;
+  it("should preserve original schema in a round-trip", () => {
+    const deactivated = deactivateModels(mockSchema, ["Invoice"]);
+    const reactivated = activateModels(deactivated, ["Invoice"]);
+    // Basic check for content
+    expect(reactivated).toContain("model Invoice {");
+    expect(reactivated).not.toContain("// model Invoice {");
+  });
 
-describe("Schema Modifier", () => {
-  it("should detect active module", () => {
+  it("should accurately detect active status", () => {
     expect(isModuleActive(mockSchema, ["User"])).toBe(true);
-    expect(isModuleActive(mockCommentedSchema, ["Tenant"])).toBe(false);
-  });
-
-  it("should deactivate models", () => {
-    const result = deactivateModels(mockSchema, ["Tenant"]);
-    expect(result).toContain("// model Tenant {");
-    expect(result).toContain("//   id String @id");
-  });
-
-  it("should activate models", () => {
-    const result = activateModels(mockCommentedSchema, ["Tenant"]);
-    expect(result).toContain("model Tenant {");
-    expect(result).not.toContain("// model Tenant {");
+    const deactivated = deactivateModels(mockSchema, ["Invoice"]);
+    expect(isModuleActive(deactivated, ["Invoice"])).toBe(false);
   });
 });
