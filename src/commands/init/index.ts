@@ -8,6 +8,7 @@ import {
   InitPromptAnswers,
 } from "../../core/ProjectInitializer";
 import { configManager } from "../../core/ConfigManager";
+import { runEnvironmentBootstrap } from "./aiox-bootstrap";
 
 async function promptAnswers(projectName: string): Promise<InitPromptAnswers> {
   // Dynamic import to keep startup fast and avoid issues if not installed
@@ -178,6 +179,20 @@ export async function initProject(
 
     if (squadResult.installed) {
       squadSpinner.succeed("kaven-squad installed in squads/kaven-squad/");
+
+      // Install AIOX Core runtime (non-fatal)
+      const aioxSpinner = ora("Activating AIOX Core...").start();
+      const aioxResult = await initializer.installAIOXCore(targetDir);
+      if (aioxResult.installed) {
+        aioxSpinner.succeed("AIOX Core activated — agents online");
+      } else {
+        aioxSpinner.warn(
+          `AIOX Core not activated automatically (${aioxResult.reason})`
+        );
+        console.log(
+          chalk.yellow(`  Run inside the project: npx aiox-core install`)
+        );
+      }
     } else if (squadResult.reason === "already-exists") {
       squadSpinner.info("kaven-squad already installed — skipping");
     } else {
@@ -194,6 +209,9 @@ export async function initProject(
 
   // Health check
   const healthCheckSpinner = ora("Running health check...").start();
+  // AIOX Environment Bootstrap
+  await runEnvironmentBootstrap(targetDir, { skipAiox: options.skipAiox });
+
   const health = await initializer.healthCheck(targetDir);
   if (health.healthy) {
     healthCheckSpinner.succeed("Health check passed");
@@ -222,17 +240,9 @@ export async function initProject(
 
   if (options.withSquad) {
     console.log();
-    console.log(chalk.bold("AIOX Squad next step:"));
-    console.log(
-      chalk.cyan(
-        "  node /path/to/aiox-core/bin/aiox.js install --quiet --merge"
-      )
-    );
-    console.log(
-      chalk.gray(
-        "  (replace /path/to/aiox-core with your AIOX installation path)"
-      )
-    );
+    console.log(chalk.bold("AIOX Agents:"));
+    console.log(chalk.cyan(`  cd ${name}`));
+    console.log(chalk.cyan("  # Type @dev in Claude Code to start with AI agents"));
   }
 
   // Save project defaults to config for future use

@@ -3,6 +3,7 @@ import path from "path";
 import { spawn } from "child_process";
 
 export interface InitOptions {
+  skipAiox?: boolean;
   defaults?: boolean;
   skipInstall?: boolean;
   skipGit?: boolean;
@@ -198,6 +199,29 @@ export class ProjectInitializer {
     const squadGitDir = path.join(squadDir, ".git");
     if (await fs.pathExists(squadGitDir)) {
       await fs.remove(squadGitDir);
+    }
+
+    return { installed: true };
+  }
+
+  /**
+   * Install AIOX Core runtime into the project via npx.
+   * Non-fatal — if it fails, user gets instructions to run manually.
+   */
+  async installAIOXCore(
+    targetDir: string
+  ): Promise<{ installed: boolean; reason?: string }> {
+    const exitCode = await runCommand(
+      'npx',
+      ['aiox-core@5.0.3', 'install', '--quiet'],
+      targetDir
+    );
+
+    if (exitCode !== 0) {
+      return {
+        installed: false,
+        reason: `npx aiox-core exited with code ${exitCode}`,
+      };
     }
 
     return { installed: true };
