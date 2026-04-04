@@ -1,3 +1,5 @@
+// Current catalog: 27 capabilities (core set).
+// Full set of 48 capabilities will be expanded in future sprints.
 export type CapabilityType = "boolean" | "numeric";
 export type FeatureTier = "starter" | "complete" | "pro" | "enterprise";
 

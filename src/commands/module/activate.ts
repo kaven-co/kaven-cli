@@ -2,7 +2,8 @@ import chalk from "chalk";
 import ora from "ora";
 import fs from "fs-extra";
 import path from "path";
-import { execSync } from "node:child_process";
+import { spawn } from "node:child_process";
+import { confirm } from "@inquirer/prompts";
 import { MODULE_REGISTRY } from "../../lib/module-registry";
 import { activateModels, deactivateModels, isModuleActive } from "../../lib/schema-modifier";
 
@@ -67,6 +68,17 @@ export async function moduleActivate(moduleName: string, root?: string, options:
     return;
   }
 
+  if (!options.yes) {
+    const confirmed = await confirm({
+      message: `This will modify schema.extended.prisma. Continue?`,
+      default: false,
+    });
+    if (!confirmed) {
+      console.log(chalk.yellow("  Aborted."));
+      return;
+    }
+  }
+
   const spinner = ora(`Activating module ${chalk.bold(module.name)}...`).start();
   const updatedContent = activateModels(content, module.models);
   await fs.writeFile(schemaPath, updatedContent, "utf-8");
@@ -111,6 +123,17 @@ export async function moduleDeactivate(moduleName: string, root?: string, option
     return;
   }
 
+  if (!options.yes) {
+    const confirmed = await confirm({
+      message: `This will modify schema.extended.prisma. Continue?`,
+      default: false,
+    });
+    if (!confirmed) {
+      console.log(chalk.yellow("  Aborted."));
+      return;
+    }
+  }
+
   const spinner = ora(`Deactivating module ${chalk.bold(module.name)}...`).start();
   const updatedContent = deactivateModels(content, module.models);
   await fs.writeFile(schemaPath, updatedContent, "utf-8");
@@ -150,12 +173,23 @@ export async function moduleListActivation(root?: string) {
   }
 }
 
+function spawnCommand(cmd: string, args: string[], cwd: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(cmd, args, { cwd, stdio: "pipe" });
+    proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited with code ${code}`))));
+    proc.on("error", reject);
+  });
+}
+
 async function runMigrations(dbPath: string) {
   const spinner = ora("Running Prisma generate & migrate...").start();
   try {
-    execSync("pnpm prisma generate", { cwd: dbPath, stdio: "pipe" });
+    // Step 1: generate
+    await spawnCommand("pnpm", ["prisma", "generate"], dbPath);
+    // Step 2: migrate
+    await spawnCommand("pnpm", ["prisma", "migrate", "dev", "--name", "module-activation"], dbPath);
     spinner.succeed("Database schema synchronized.");
-  } catch {
-    spinner.warn("Schema modified but migrations failed. Run manualy: pnpm prisma migrate dev");
+  } catch (err) {
+    spinner.warn(`Schema modified but migrations failed. Run manually: pnpm prisma migrate dev\n  ${(err as Error).message}`);
   }
 }
