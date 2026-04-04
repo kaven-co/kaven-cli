@@ -203,6 +203,29 @@ export class ProjectInitializer {
     return { installed: true };
   }
 
+  /**
+   * Install AIOX Core runtime into the project via npx.
+   * Non-fatal — if it fails, user gets instructions to run manually.
+   */
+  async installAIOXCore(
+    targetDir: string
+  ): Promise<{ installed: boolean; reason?: string }> {
+    const exitCode = await runCommand(
+      'npx',
+      ['aiox-core@5.0.3', 'install', '--quiet'],
+      targetDir
+    );
+
+    if (exitCode !== 0) {
+      return {
+        installed: false,
+        reason: `npx aiox-core exited with code ${exitCode}`,
+      };
+    }
+
+    return { installed: true };
+  }
+
   /** Health check after project initialization. */
   async healthCheck(
     targetDir: string
