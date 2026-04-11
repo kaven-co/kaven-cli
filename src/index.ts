@@ -31,7 +31,7 @@ export const main = () => {
   program
     .name("kaven")
     .description("The official CLI for the Kaven SaaS boilerplate ecosystem")
-    .version("0.4.1-alpha")
+    .version("0.4.1-alpha.0")
     .addHelpText(
       "after",
       `

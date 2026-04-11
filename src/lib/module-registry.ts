@@ -42,4 +42,11 @@ export const MODULE_REGISTRY: KavenModule[] = [
     models: ["ServiceToken"],
     dependsOn: ["core"],
   },
+  {
+    id: "marketing-tracking",
+    name: "Marketing Tracking",
+    description: "Ad tracking, GTM, GA4 and Meta CAPI observability",
+    models: ["TrackingEvent"],
+    dependsOn: ["core"],
+  },
 ];

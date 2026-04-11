@@ -8,6 +8,7 @@ import os from "os";
 vi.mock("ora", () => ({
   default: vi.fn(() => ({
     start: vi.fn().mockReturnThis(),
+    stop: vi.fn().mockReturnThis(),
     succeed: vi.fn().mockReturnThis(),
     warn: vi.fn().mockReturnThis(),
     fail: vi.fn().mockReturnThis(),
@@ -36,13 +37,85 @@ import { moduleActivate, moduleDeactivate, moduleListActivation } from "../../..
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function makeBillingSchema(active: boolean): string {
-  const models = active
-    ? `model Invoice {\n  id String @id @default(cuid())\n}\nmodel Order {\n  id String @id\n}\nmodel Subscription {\n  id String @id\n}\nmodel Plan {\n  id String @id\n}\nmodel Payment {\n  id String @id\n}\nmodel Product {\n  id String @id\n}\n`
-    : `// model Invoice {\n//   id String @id @default(cuid())\n// }\n// model Order {\n//   id String @id\n// }\n// model Subscription {\n//   id String @id\n// }\n// model Plan {\n//   id String @id\n// }\n// model Payment {\n//   id String @id\n// }\n// model Product {\n//   id String @id\n// }\n`;
+  // SchemaActivator requires BEGIN/END markers to activate/deactivate modules
+  const billingModels = active
+    ? [
+        "model Invoice {",
+        "  id String @id @default(cuid())",
+        "}",
+        "model Order {",
+        "  id String @id",
+        "}",
+        "model Subscription {",
+        "  id String @id",
+        "}",
+        "model Plan {",
+        "  id String @id",
+        "}",
+        "model Payment {",
+        "  id String @id",
+        "}",
+        "model Product {",
+        "  id String @id",
+        "}",
+      ].join("\n")
+    : [
+        "// model Invoice {",
+        "//   id String @id @default(cuid())",
+        "// }",
+        "// model Order {",
+        "//   id String @id",
+        "// }",
+        "// model Subscription {",
+        "//   id String @id",
+        "// }",
+        "// model Plan {",
+        "//   id String @id",
+        "// }",
+        "// model Payment {",
+        "//   id String @id",
+        "// }",
+        "// model Product {",
+        "//   id String @id",
+        "// }",
+      ].join("\n");
 
-  const coreModels = `model Tenant {\n  id String @id\n}\nmodel User {\n  id String @id\n}\nmodel Role {\n  id String @id\n}\nmodel Capability {\n  id String @id\n}\nmodel AuthSession {\n  id String @id\n}\nmodel AuditLog {\n  id String @id\n}\nmodel RefreshToken {\n  id String @id\n}\nmodel EmailVerification {\n  id String @id\n}\n`;
+  const coreModels = [
+    "model Tenant {",
+    "  id String @id",
+    "}",
+    "model User {",
+    "  id String @id",
+    "}",
+    "model Role {",
+    "  id String @id",
+    "}",
+    "model Capability {",
+    "  id String @id",
+    "}",
+    "model AuthSession {",
+    "  id String @id",
+    "}",
+    "model AuditLog {",
+    "  id String @id",
+    "}",
+    "model RefreshToken {",
+    "  id String @id",
+    "}",
+    "model EmailVerification {",
+    "  id String @id",
+    "}",
+  ].join("\n");
 
-  return `// Prisma schema\n\n${coreModels}\n${models}`;
+  return [
+    "// Prisma schema",
+    "",
+    coreModels,
+    "",
+    "// [KAVEN_MODULE:BILLING BEGIN]",
+    billingModels,
+    "// [KAVEN_MODULE:BILLING END]",
+  ].join("\n");
 }
 
 async function setupProject(schemaContent: string): Promise<string> {

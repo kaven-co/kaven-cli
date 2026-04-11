@@ -5,7 +5,7 @@ import path from "path";
 // Definição dos módulos conhecidos do kaven-framework
 // ============================================================
 
-export type ModuleId = "auth" | "billing" | "projects" | "notifications" | "marketing-tracking";
+export type ModuleId = "auth" | "billing" | "projects" | "notifications" | "marketing-tracking" | "service-tokens";
 
 export interface KavenModuleDef {
   id: ModuleId;
@@ -69,6 +69,14 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     description: "Observabilidade de anúncios, GTM, GA4 e Meta CAPI",
     models: ["TrackingEvent"],
     enums: ["TrackingSource"],
+    dependsOn: [],
+  },
+  {
+    id: "service-tokens",
+    label: "Service Tokens",
+    description: "Agent authentication tokens for AIOX integration",
+    models: ["ServiceToken"],
+    enums: [],
     dependsOn: [],
   },
 ];
