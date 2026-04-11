@@ -60,6 +60,7 @@ export const TIER_DEFAULTS: Record<FeatureTier, Record<string, string | boolean>
     MAX_TEAM_MEMBERS: "5",
     MAX_PROJECTS: "3",
     MAX_API_CALLS_MONTH: "10000",
+    MAX_AGENT_API_CALLS_HOUR: "100",
   },
   complete: {
     FEATURE_EMAIL_VERIFICATION: true,
@@ -70,6 +71,7 @@ export const TIER_DEFAULTS: Record<FeatureTier, Record<string, string | boolean>
     MAX_TEAM_MEMBERS: "25",
     MAX_PROJECTS: "20",
     MAX_API_CALLS_MONTH: "100000",
+    MAX_AGENT_API_CALLS_HOUR: "500",
   },
   pro: {
     FEATURE_EMAIL_VERIFICATION: true,
@@ -81,6 +83,7 @@ export const TIER_DEFAULTS: Record<FeatureTier, Record<string, string | boolean>
     MAX_TEAM_MEMBERS: "100",
     MAX_PROJECTS: "100",
     MAX_API_CALLS_MONTH: "1000000",
+    MAX_AGENT_API_CALLS_HOUR: "2000",
   },
   enterprise: {}
 };
