@@ -48,6 +48,28 @@ async function loadConfigApiUrl(): Promise<string | null> {
   return null;
 }
 
+/**
+ * Load a service token for agent-to-service auth.
+ * Resolution order: KAVEN_SERVICE_TOKEN env → ~/.kaven/config.json#serviceToken
+ */
+async function loadServiceToken(): Promise<string | null> {
+  if (process.env.KAVEN_SERVICE_TOKEN) {
+    return process.env.KAVEN_SERVICE_TOKEN;
+  }
+  try {
+    const configPath = path.join(os.homedir(), ".kaven", "config.json");
+    if (await fs.pathExists(configPath)) {
+      const config = await fs.readJson(configPath);
+      if (typeof config.serviceToken === "string" && config.serviceToken) {
+        return config.serviceToken;
+      }
+    }
+  } catch {
+    // Ignore config read errors
+  }
+  return null;
+}
+
 /** Resolve base URL from env → config file → default. */
 async function resolveBaseUrl(): Promise<string> {
   if (process.env.KAVEN_API_URL) {
@@ -123,6 +145,11 @@ export class MarketplaceClient {
         if (authenticated && this.authService) {
           const token = await this.authService.getValidToken();
           headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const serviceToken = await loadServiceToken();
+        if (serviceToken) {
+          headers["X-Service-Token"] = serviceToken;
         }
 
         debug(`${method} ${url}`);

@@ -121,6 +121,9 @@ export class ProjectInitializer {
       "apps/api/package.json",
       "apps/admin/package.json",
       "apps/tenant/package.json",
+      "docs/architecture/tech-stack.md",
+      "docs/architecture/source-tree.md",
+      "docs/architecture/coding-standards.md",
     ];
 
     for (const relFile of filesToProcess) {
