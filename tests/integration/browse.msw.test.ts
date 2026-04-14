@@ -10,8 +10,8 @@ afterAll(() => mockServer.close());
 describe('marketplace browse (MSW integration)', () => {
   it('fetches categories successfully', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
-        HttpResponse.json({ categories: ['auth', 'billing', 'notifications', 'devtools'] })
+      http.get('https://marketplace.kaven.site/categories', () =>
+        HttpResponse.json(['auth', 'billing', 'notifications', 'devtools'])
       )
     );
 
@@ -25,8 +25,8 @@ describe('marketplace browse (MSW integration)', () => {
 
   it('returns empty categories gracefully', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
-        HttpResponse.json({ categories: [] })
+      http.get('https://marketplace.kaven.site/categories', () =>
+        HttpResponse.json([])
       )
     );
 
@@ -77,7 +77,7 @@ describe('marketplace browse (MSW integration)', () => {
 
   it('throws error on categories auth failure (401)', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
+      http.get('https://marketplace.kaven.site/categories', () =>
         HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
       )
     );

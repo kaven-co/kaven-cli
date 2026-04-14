@@ -551,18 +551,22 @@ export class MarketplaceClient {
   }
 
   // ──────────────────────────────────────────────────────────
-  // Categories endpoint (authenticated)
+  // Categories — public GET /categories (array JSON)
   // ──────────────────────────────────────────────────────────
 
   /**
-   * Get all available module categories.
+   * Get all available module categories from public modules.
+   * API returns a JSON array (not { categories: [...] }).
    */
   async getCategories(): Promise<string[]> {
-    const result = await this.request<{ categories: string[] }>(
+    const result = await this.request<string[] | { categories: string[] }>(
       "GET",
-      "/modules/categories",
-      { authenticated: true }
+      "/categories",
+      { authenticated: false }
     );
-    return result.categories;
+    if (Array.isArray(result)) {
+      return result;
+    }
+    return result.categories ?? [];
   }
 }
