@@ -551,18 +551,39 @@ export class MarketplaceClient {
   }
 
   // ──────────────────────────────────────────────────────────
-  // Categories endpoint (authenticated)
+  // Categories — public GET /categories (array JSON)
   // ──────────────────────────────────────────────────────────
 
   /**
-   * Get all available module categories.
+   * Get all available module categories from public modules.
+   * API returns a JSON array (not { categories: [...] }).
    */
   async getCategories(): Promise<string[]> {
-    const result = await this.request<{ categories: string[] }>(
-      "GET",
-      "/modules/categories",
-      { authenticated: true }
-    );
-    return result.categories;
+    try {
+      const result = await this.request<string[] | { categories: string[] }>(
+        "GET",
+        "/categories",
+        { authenticated: false }
+      );
+      if (Array.isArray(result)) {
+        return result;
+      }
+      return result.categories ?? [];
+    } catch (err) {
+      // Backwards compatibility: production may not expose GET /categories yet.
+      // Fallback to /search facets (public) to derive category list.
+      if (err instanceof NotFoundError) {
+        type SearchResponse = {
+          facets?: { categories?: Array<{ category: string; count: number }> };
+        };
+        const res = await this.request<SearchResponse>("GET", "/search?q=", {
+          authenticated: false,
+        });
+        const categories =
+          res.facets?.categories?.map((c) => c.category).filter(Boolean) ?? [];
+        return [...new Set(categories)].sort();
+      }
+      throw err;
+    }
   }
 }

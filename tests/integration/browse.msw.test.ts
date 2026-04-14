@@ -10,8 +10,8 @@ afterAll(() => mockServer.close());
 describe('marketplace browse (MSW integration)', () => {
   it('fetches categories successfully', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
-        HttpResponse.json({ categories: ['auth', 'billing', 'notifications', 'devtools'] })
+      http.get('https://marketplace.kaven.site/categories', () =>
+        HttpResponse.json(['auth', 'billing', 'notifications', 'devtools'])
       )
     );
 
@@ -25,8 +25,8 @@ describe('marketplace browse (MSW integration)', () => {
 
   it('returns empty categories gracefully', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
-        HttpResponse.json({ categories: [] })
+      http.get('https://marketplace.kaven.site/categories', () =>
+        HttpResponse.json([])
       )
     );
 
@@ -77,7 +77,7 @@ describe('marketplace browse (MSW integration)', () => {
 
   it('throws error on categories auth failure (401)', async () => {
     mockServer.use(
-      http.get('https://marketplace.kaven.site/modules/categories', () =>
+      http.get('https://marketplace.kaven.site/categories', () =>
         HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
       )
     );
@@ -85,5 +85,28 @@ describe('marketplace browse (MSW integration)', () => {
     const client = new MarketplaceClient();
     // 401 is not retried, throws immediately
     await expect(client.getCategories()).rejects.toThrow();
+  });
+
+  it('falls back to /search facets when /categories is missing (404)', async () => {
+    mockServer.use(
+      http.get('https://marketplace.kaven.site/categories', () =>
+        HttpResponse.json({ message: 'Route GET:/categories not found' }, { status: 404 })
+      ),
+      http.get('https://marketplace.kaven.site/search', ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get('q') !== '') {
+          return HttpResponse.json({ data: [], facets: { categories: [] }, pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } });
+        }
+        return HttpResponse.json({
+          data: [],
+          facets: { categories: [{ category: 'billing', count: 2 }, { category: 'auth', count: 1 }] },
+          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        });
+      })
+    );
+
+    const client = new MarketplaceClient();
+    const categories = await client.getCategories();
+    expect(categories).toEqual(['auth', 'billing']);
   });
 });
