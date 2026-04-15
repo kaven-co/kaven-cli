@@ -21,7 +21,7 @@ import {
 } from "./errors";
 import type { AuthService } from "../core/AuthService";
 
-const DEFAULT_BASE_URL = "https://api.kaven.site";
+const DEFAULT_BASE_URL = "https://marketplace.kaven.site";
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1_000;
@@ -40,6 +40,28 @@ async function loadConfigApiUrl(): Promise<string | null> {
       const config = await fs.readJson(configPath);
       if (typeof config.apiUrl === "string" && config.apiUrl) {
         return config.apiUrl;
+      }
+    }
+  } catch {
+    // Ignore config read errors
+  }
+  return null;
+}
+
+/**
+ * Load a service token for agent-to-service auth.
+ * Resolution order: KAVEN_SERVICE_TOKEN env → ~/.kaven/config.json#serviceToken
+ */
+async function loadServiceToken(): Promise<string | null> {
+  if (process.env.KAVEN_SERVICE_TOKEN) {
+    return process.env.KAVEN_SERVICE_TOKEN;
+  }
+  try {
+    const configPath = path.join(os.homedir(), ".kaven", "config.json");
+    if (await fs.pathExists(configPath)) {
+      const config = await fs.readJson(configPath);
+      if (typeof config.serviceToken === "string" && config.serviceToken) {
+        return config.serviceToken;
       }
     }
   } catch {
@@ -123,6 +145,11 @@ export class MarketplaceClient {
         if (authenticated && this.authService) {
           const token = await this.authService.getValidToken();
           headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const serviceToken = await loadServiceToken();
+        if (serviceToken) {
+          headers["X-Service-Token"] = serviceToken;
         }
 
         debug(`${method} ${url}`);
@@ -524,18 +551,39 @@ export class MarketplaceClient {
   }
 
   // ──────────────────────────────────────────────────────────
-  // Categories endpoint (authenticated)
+  // Categories — public GET /categories (array JSON)
   // ──────────────────────────────────────────────────────────
 
   /**
-   * Get all available module categories.
+   * Get all available module categories from public modules.
+   * API returns a JSON array (not { categories: [...] }).
    */
   async getCategories(): Promise<string[]> {
-    const result = await this.request<{ categories: string[] }>(
-      "GET",
-      "/modules/categories",
-      { authenticated: true }
-    );
-    return result.categories;
+    try {
+      const result = await this.request<string[] | { categories: string[] }>(
+        "GET",
+        "/categories",
+        { authenticated: false }
+      );
+      if (Array.isArray(result)) {
+        return result;
+      }
+      return result.categories ?? [];
+    } catch (err) {
+      // Backwards compatibility: production may not expose GET /categories yet.
+      // Fallback to /search facets (public) to derive category list.
+      if (err instanceof NotFoundError) {
+        type SearchResponse = {
+          facets?: { categories?: Array<{ category: string; count: number }> };
+        };
+        const res = await this.request<SearchResponse>("GET", "/search?q=", {
+          authenticated: false,
+        });
+        const categories =
+          res.facets?.categories?.map((c) => c.category).filter(Boolean) ?? [];
+        return [...new Set(categories)].sort();
+      }
+      throw err;
+    }
   }
 }

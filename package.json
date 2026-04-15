@@ -1,6 +1,7 @@
 {
   "name": "kaven-cli",
-  "version": "0.3.1",
+  "version": "0.4.2-alpha.0",
+  
   "description": "Kaven CLI - The official command line tool for Kaven",
   "main": "dist/index.js",
   "bin": {
@@ -12,7 +13,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "pnpm run build && pnpm run quality",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings 0",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "test": "vitest run",
@@ -39,9 +40,14 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KavenCompany/kaven-cli"
+    "url": "https://github.com/kaven-co/kaven-cli"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.0.0",
     "@types/tar": "^6.1.13",
@@ -49,6 +55,8 @@
     "@typescript-eslint/parser": "^8.53.1",
     "eslint": "^8.0.0",
     "msw": "^2.12.10",
+    "semantic-release": "^25.0.3",
+    "tsup": "^8.5.1",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"
   },

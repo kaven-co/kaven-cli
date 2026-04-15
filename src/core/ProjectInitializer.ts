@@ -3,14 +3,17 @@ import path from "path";
 import { spawn } from "child_process";
 
 export interface InitOptions {
+  skipAiox?: boolean;
   defaults?: boolean;
   skipInstall?: boolean;
   skipGit?: boolean;
   force?: boolean;
+  withSquad?: boolean;
   dbUrl?: string;
   emailProvider?: string;
   locale?: string;
   currency?: string;
+  template?: string;
 }
 
 export interface InitPromptAnswers {
@@ -21,6 +24,7 @@ export interface InitPromptAnswers {
 }
 
 const TEMPLATE_REPO = "https://github.com/kaven-co/kaven-template.git";
+const KAVEN_SQUAD_REPO = "https://github.com/bychrisr/kaven-squad";
 
 /** Run a shell command via spawn, returning exit code. */
 function runCommand(
@@ -63,11 +67,25 @@ export class ProjectInitializer {
     return { valid: true };
   }
 
-  /** Clone the template repo with --depth 1 into targetDir. */
-  async cloneTemplate(targetDir: string): Promise<void> {
+  /** Clone the template (from Git or local path) into targetDir. */
+  async cloneTemplate(targetDir: string, templateSource?: string): Promise<void> {
+    const source = templateSource || TEMPLATE_REPO;
+    console.log(`[INIT] Clone Source: ${source}`);
+    console.log(`[INIT] Target Dir: ${targetDir}`);
+    
+    // If it's a local path that exists, copy it instead of cloning
+    if (await fs.pathExists(source) && (source.startsWith("/") || source.startsWith("./") || source.startsWith("../"))) {
+      console.log(`[INIT] Local Path Detected. Copying...`);
+      await fs.copy(source, targetDir, {
+        filter: (src) => !src.includes("node_modules") && !src.includes(".git") && !src.includes(".turbo")
+      });
+      console.log(`[INIT] Local Copy Done.`);
+      return;
+    }
+
     const exitCode = await runCommand(
       "git",
-      ["clone", "--depth", "1", TEMPLATE_REPO, targetDir],
+      ["clone", "--depth", "1", source, targetDir],
       process.cwd()
     );
 
@@ -99,10 +117,13 @@ export class ProjectInitializer {
     const filesToProcess = [
       "package.json",
       ".env.example",
-      "prisma/schema.prisma",
+      "packages/database/prisma/schema.prisma",
       "apps/api/package.json",
       "apps/admin/package.json",
       "apps/tenant/package.json",
+      "docs/architecture/tech-stack.md",
+      "docs/architecture/source-tree.md",
+      "docs/architecture/coding-standards.md",
     ];
 
     for (const relFile of filesToProcess) {
@@ -114,6 +135,16 @@ export class ProjectInitializer {
         content = content.split(placeholder).join(value);
       }
       await fs.writeFile(filePath, content, "utf-8");
+    }
+
+    // Safety net: directly update root package.json name field regardless of placeholder
+    const pkgPath = path.join(targetDir, "package.json");
+    if (await fs.pathExists(pkgPath)) {
+      const pkg = await fs.readJson(pkgPath);
+      if (pkg.name !== values.projectName) {
+        pkg.name = values.projectName;
+        await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+      }
     }
   }
 
@@ -136,6 +167,69 @@ export class ProjectInitializer {
     );
   }
 
+  /**
+   * Clone kaven-squad into squads/kaven-squad/ inside the project.
+   * Returns { installed: true } on success, { installed: false, reason } on failure.
+   * Never throws — squad installation is non-fatal.
+   */
+  async installSquad(
+    targetDir: string
+  ): Promise<{ installed: boolean; reason?: string }> {
+    const squadsDir = path.join(targetDir, "squads");
+    const squadDir = path.join(squadsDir, "kaven-squad");
+
+    // Squad already present — skip
+    if (await fs.pathExists(squadDir)) {
+      return { installed: false, reason: "already-exists" };
+    }
+
+    await fs.ensureDir(squadsDir);
+
+    const exitCode = await runCommand(
+      "git",
+      ["clone", "--depth", "1", KAVEN_SQUAD_REPO, squadDir],
+      process.cwd()
+    );
+
+    if (exitCode !== 0) {
+      return {
+        installed: false,
+        reason: `git clone exited with code ${exitCode}`,
+      };
+    }
+
+    // Remove .git — squad history not needed in user project
+    const squadGitDir = path.join(squadDir, ".git");
+    if (await fs.pathExists(squadGitDir)) {
+      await fs.remove(squadGitDir);
+    }
+
+    return { installed: true };
+  }
+
+  /**
+   * Install AIOX Core runtime into the project via npx.
+   * Non-fatal — if it fails, user gets instructions to run manually.
+   */
+  async installAIOXCore(
+    targetDir: string
+  ): Promise<{ installed: boolean; reason?: string }> {
+    const exitCode = await runCommand(
+      'npx',
+      ['aiox-core@5.0.3', 'install', '--quiet'],
+      targetDir
+    );
+
+    if (exitCode !== 0) {
+      return {
+        installed: false,
+        reason: `npx aiox-core exited with code ${exitCode}`,
+      };
+    }
+
+    return { installed: true };
+  }
+
   /** Health check after project initialization. */
   async healthCheck(
     targetDir: string
@@ -143,7 +237,7 @@ export class ProjectInitializer {
     const issues: string[] = [];
 
     // Check key files exist
-    const requiredFiles = ["package.json", ".env.example", "prisma/schema.prisma"];
+    const requiredFiles = ["package.json", ".env.example", "packages/database/prisma/schema.prisma"];
     for (const file of requiredFiles) {
       if (!(await fs.pathExists(path.join(targetDir, file)))) {
         issues.push(`Missing required file: ${file}`);

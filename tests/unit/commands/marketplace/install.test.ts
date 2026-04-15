@@ -45,7 +45,7 @@ vi.mock("../../../../src/infrastructure/MarketplaceClient", () => ({
     getModule: vi.fn(),
     createDownloadToken: vi.fn(),
     getReleaseInfo: vi.fn(),
-    resolveUrl: vi.fn((p: string) => Promise.resolve(`https://api.kaven.site${p}`)),
+    resolveUrl: vi.fn((p: string) => Promise.resolve(`https://marketplace.kaven.site${p}`)),
   })),
 }));
 
@@ -216,7 +216,7 @@ describe("marketplaceInstall (C1.5)", () => {
       getModule: mockGetModule,
       createDownloadToken: mockCreateDownloadToken,
       getReleaseInfo: mockGetReleaseInfo,
-      resolveUrl: vi.fn((p: string) => Promise.resolve(`https://api.kaven.site${p}`)),
+      resolveUrl: vi.fn((p: string) => Promise.resolve(`https://marketplace.kaven.site${p}`)),
     }));
 
     (ModuleInstaller as ReturnType<typeof vi.fn>).mockImplementation(() => ({
@@ -339,7 +339,7 @@ describe("marketplaceInstall (C1.5)", () => {
       module.latestVersion
     );
     expect(fetchSpy).toHaveBeenCalledWith(
-      `https://api.kaven.site${token.downloadUrl}`
+      `https://marketplace.kaven.site${token.downloadUrl}`
     );
     expect(tarModule.x).toHaveBeenCalled();
     expect(mockInstall).toHaveBeenCalled();

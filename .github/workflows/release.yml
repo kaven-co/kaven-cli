@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write       # commit version bump + CHANGELOG, create GitHub release
+  issues: write         # comment on issues when released
+  pull-requests: write  # comment on PRs when released
+  id-token: write       # OIDC Trusted Publishing — no NPM_TOKEN needed
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    # Skip if commit is from semantic-release itself (version bump commit)
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history needed for semantic-release
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          # Note: no registry-url — @semantic-release/npm handles npm auth via OIDC internally
+
+      - name: Upgrade npm (OIDC Trusted Publishing requires npm >= 11.5.1)
+        run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

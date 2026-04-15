@@ -29,7 +29,7 @@ describe('Auth Flow (MSW)', () => {
 
   it('returns authorization_pending status during poll', async () => {
     mockServer.use(
-      http.post('https://api.kaven.site/auth/token', () =>
+      http.post('https://marketplace.kaven.site/auth/token', () =>
         HttpResponse.json({ error: 'authorization_pending' }, { status: 400 })
       )
     );
@@ -40,7 +40,7 @@ describe('Auth Flow (MSW)', () => {
 
   it('returns access_denied status when user denies', async () => {
     mockServer.use(
-      http.post('https://api.kaven.site/auth/token', () =>
+      http.post('https://marketplace.kaven.site/auth/token', () =>
         HttpResponse.json({ error: 'access_denied' }, { status: 400 })
       )
     );
@@ -51,7 +51,7 @@ describe('Auth Flow (MSW)', () => {
 
   it('returns expired_token status when token expires', async () => {
     mockServer.use(
-      http.post('https://api.kaven.site/auth/token', () =>
+      http.post('https://marketplace.kaven.site/auth/token', () =>
         HttpResponse.json({ error: 'expired_token' }, { status: 400 })
       )
     );
@@ -62,7 +62,7 @@ describe('Auth Flow (MSW)', () => {
 
   it('throws on unexpected error from server', async () => {
     mockServer.use(
-      http.post('https://api.kaven.site/auth/token', () =>
+      http.post('https://marketplace.kaven.site/auth/token', () =>
         HttpResponse.json({ error: 'server_exploded' }, { status: 400 })
       )
     );

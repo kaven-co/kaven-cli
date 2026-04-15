@@ -10,6 +10,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+package-lock.json
+
+# Local/generated artifacts (do not version)
+packages/database/prisma/seeds/capabilities.seed.ts
 
 # ============================================================================== 
 # Build outputs

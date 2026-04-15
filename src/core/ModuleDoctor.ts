@@ -47,9 +47,9 @@ export class ModuleDoctor {
     const results: DoctorCheckResult[] = [];
 
     const expectedAnchors = [
-      { file: "apps/api/src/index.ts", anchor: "// [ANCHOR:ROUTES]" },
-      { file: "apps/api/src/index.ts", anchor: "// [ANCHOR:MIDDLEWARE]" },
-      { file: "apps/admin/app/layout.tsx", anchor: "// [ANCHOR:NAV_ITEMS]" },
+      { file: "apps/api/src/app.ts", anchor: "// [KAVEN_MODULE_IMPORTS]" },
+      { file: "apps/api/src/app.ts", anchor: "// [KAVEN_MODULE_HOOKS]" },
+      { file: "apps/api/src/app.ts", anchor: "// [KAVEN_MODULE_REGISTRATION]" },
     ];
 
     for (const { file, anchor } of expectedAnchors) {
@@ -525,7 +525,7 @@ export class ModuleDoctor {
   }
 
   private async readKavenConfig(): Promise<KavenConfig> {
-    const configPath = path.join(this.projectRoot, "kaven.config.json");
+    const configPath = path.join(this.projectRoot, "kaven.json");
 
     if (!(await fs.pathExists(configPath))) {
       return { modules: [] };
