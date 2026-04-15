@@ -11,7 +11,7 @@ export function createTestJwt(payload: Partial<JwtPayload> = {}): string {
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
   const body = Buffer.from(JSON.stringify({
     sub: payload.sub ?? 'user_test',
-    email: payload.email ?? 'test@kaven.sh',
+    email: payload.email ?? 'test@kaven.site',
     githubId: payload.githubId ?? 'testuser',
     tier: payload.tier ?? 'STARTER',
     iat: Math.floor(Date.now() / 1000),

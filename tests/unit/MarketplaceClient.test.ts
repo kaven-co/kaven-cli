@@ -58,7 +58,7 @@ describe("MarketplaceClient", () => {
       const mockPayload = {
         device_code: "dev-abc",
         user_code: "KAVEN-1234",
-        verification_uri: "https://kaven.sh/activate",
+        verification_uri: "https://kaven.site/activate",
         expires_in: 600,
         interval: 5,
       };
@@ -68,7 +68,7 @@ describe("MarketplaceClient", () => {
 
       expect(result.device_code).toBe("dev-abc");
       expect(result.user_code).toBe("KAVEN-1234");
-      expect(result.verification_uri).toBe("https://kaven.sh/activate");
+      expect(result.verification_uri).toBe("https://kaven.site/activate");
       expect(result.expires_in).toBe(600);
     });
 
@@ -110,7 +110,7 @@ describe("MarketplaceClient", () => {
         access_token: "at.xxx",
         refresh_token: "rt.yyy",
         expires_at: new Date(Date.now() + 3600_000).toISOString(),
-        user: { email: "dev@kaven.sh", githubId: "octocat", tier: "complete" },
+        user: { email: "dev@kaven.site", githubId: "octocat", tier: "complete" },
       };
       fetchSpy.mockResolvedValueOnce(makeResponse(200, tokens));
 
