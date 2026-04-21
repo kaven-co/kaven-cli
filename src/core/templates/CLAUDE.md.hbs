@@ -1,0 +1,27 @@
+# CLAUDE.md — Kaven Framework Rules
+
+<!-- FRAMEWORK-OWNED: DO NOT REMOVE CORE PRINCIPLES -->
+
+## Project Vision
+This project is powered by the **Kaven Framework**, a high-performance SaaS boilerplate.
+Architecture: Next.js (App Router) + Fastify (API) + Prisma + PostgreSQL.
+
+## 🛠 Core Commands
+- `pnpm dev`: Start all services (Turborepo)
+- `kaven module activate <name>`: Activate a schema module
+- `kaven config features`: Open the feature flag TUI
+- `pnpm db:migrate`: Run Prisma migrations
+
+## 🧬 Coding Standards
+- **Naming**: camelCase for variables/functions, PascalCase for components/classes.
+- **Language**: Source code in **English**, comments and logs in **Portuguese (PT-BR)**.
+- **Imports**: Use Absolute Imports (`@/lib/...`).
+- **Prisma**: Never modify `schema.prisma` directly; use `schema.extended.prisma`.
+
+## 🤖 Agent Instructions
+- **Handoffs**: Always end sessions with a session digest in `.aiox/sessions/`.
+- **Integrity**: Before merging any code, run `kaven module doctor`.
+- **Memory**: Save recurring architectural decisions to MCP memory.
+
+---
+*Kaven CLI v0.5.0 · Generated on ${new Date().toLocaleDateString()}*

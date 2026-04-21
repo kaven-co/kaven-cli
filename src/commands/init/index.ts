@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "fs-extra";
+import { fileURLToPath } from "node:url";
 import { intro, outro, text, select, confirm, spinner, note, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../../core/ProjectInitializer.js";
 import { configManager } from "../../core/ConfigManager.js";
 import { I18nService } from "../../core/I18nService.js";
+import { getBrandingBanner } from "../../core/Branding.js";
 import { runEnvironmentBootstrap } from "./aiox-bootstrap.js";
 
 function handleCancel(value: unknown) {
@@ -25,6 +27,8 @@ export async function initProject(
   const i18n = await I18nService.getInstance();
   const initializer = new ProjectInitializer();
   
+  // Welcome Banner
+  console.log(getBrandingBanner());
   intro(pc.cyan(i18n.t("init.intro")));
 
   // 1. Resolve Project Name
@@ -125,6 +129,29 @@ export async function initProject(
   s.start("Configuring project...");
   await initializer.removeGitDir(targetDir);
   await initializer.replacePlaceholders(targetDir, { ...answers, projectName: name });
+
+  // 3.1 Inject Kaven Authority Rules (CLAUDE.md)
+  try {
+    const claudePath = path.join(targetDir, ".claude", "CLAUDE.md");
+    await fs.ensureDir(path.dirname(claudePath));
+    
+    // Resolve template path using ESM meta-url
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const templatePath = path.resolve(__dirname, "../../core/templates/CLAUDE.md.hbs");
+
+    if (await fs.pathExists(templatePath)) {
+      const templateContent = await fs.readFile(templatePath, "utf-8");
+      const finalContent = templateContent.replace(
+        "${new Date().toLocaleDateString()}",
+        new Date().toLocaleDateString()
+      );
+      await fs.writeFile(claudePath, finalContent, "utf-8");
+    }
+  } catch {
+    // Non-fatal if rule injection fails
+  }
+
   s.stop(pc.green("Project configured"));
 
   if (!options.skipInstall) {
@@ -170,13 +197,14 @@ export async function initProject(
 
   outro(pc.cyan(i18n.t("init.outro")));
 
-  // Save defaults
+  // Save defaults to Global Config
   try {
+    await configManager.initialize();
     await configManager.set("projectDefaults", {
       dbUrl: answers.dbUrl,
       emailProvider: answers.emailProvider as unknown as "postmark" | "resend" | "ses" | "smtp",
       locale: answers.locale,
       currency: answers.currency,
-    });
+    }, "global");
   } catch { /* ignore */ }
 }
