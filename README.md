@@ -248,6 +248,18 @@ We use **Conventional Commits**. Every commit must be prefixed with `feat:`, `fi
 
 ---
 
+## Credits & Attribution
+
+Kaven CLI is built with support from the **AIOX Framework**, an agentic development ecosystem by [SynkraAI](https://github.com/synkra). 
+
+Special thanks to the **Kaven Squad** of autonomous agents who helped architect, develop, and validate this tool:
+- **Kai** (Orchestrator)
+- **Dex** (Developer)
+- **Quinn** (QA)
+- **Gage** (DevOps)
+
+---
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE)
