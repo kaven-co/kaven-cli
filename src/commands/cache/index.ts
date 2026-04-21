@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { getCacheManager } from "../../core/CacheManager";
+import { getCacheManager } from "../../core/CacheManager.js";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";

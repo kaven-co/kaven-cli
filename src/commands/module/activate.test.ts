@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { SchemaActivator, KAVEN_MODULES } from "../../core/SchemaActivator";
+import { SchemaActivator, KAVEN_MODULES } from "../../core/SchemaActivator.js";
 
 // ============================================================
 // Helpers de fixture

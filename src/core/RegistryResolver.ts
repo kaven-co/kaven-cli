@@ -1,6 +1,6 @@
-import { configManager } from "./ConfigManager";
-import { MarketplaceClient } from "../infrastructure/MarketplaceClient";
-import { AuthService } from "./AuthService";
+import { configManager } from "./ConfigManager.js";
+import { MarketplaceClient } from "../infrastructure/MarketplaceClient.js";
+import { AuthService } from "./AuthService.js";
 
 /**
  * C2.5: Registry resolver — handles both official and custom registries

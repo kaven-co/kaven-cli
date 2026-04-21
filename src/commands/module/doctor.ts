@@ -2,9 +2,9 @@ import chalk from "chalk";
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs-extra";
-import { ModuleDoctor, DoctorCheckResult } from "../../core/ModuleDoctor";
-import { MarkerService } from "../../core/MarkerService";
-import { ManifestParser } from "../../core/ManifestParser";
+import { ModuleDoctor, DoctorCheckResult } from "../../core/ModuleDoctor.js";
+import { MarkerService } from "../../core/MarkerService.js";
+import { ManifestParser } from "../../core/ManifestParser.js";
 
 export interface DoctorOptions {
   fix?: boolean;

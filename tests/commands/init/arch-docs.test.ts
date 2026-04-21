@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ProjectInitializer } from "../../../src/core/ProjectInitializer";
+import { ProjectInitializer } from "../../../src/core/ProjectInitializer.js";
 import * as fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";

@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import { ModuleManifestSchema, ModuleManifest } from "../types/manifest";
+import { ModuleManifestSchema, ModuleManifest } from "../types/manifest.js";
 import { ZodError } from "zod";
 
 export class ManifestParser {

@@ -2,10 +2,10 @@ import chalk from "chalk";
 import ora from "ora";
 import path from "path";
 import fs from "fs-extra";
-import { ModuleInstaller } from "../../core/ModuleInstaller";
-import { MarkerService } from "../../core/MarkerService";
-import { ManifestParser } from "../../core/ManifestParser";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+import { ModuleInstaller } from "../../core/ModuleInstaller.js";
+import { MarkerService } from "../../core/MarkerService.js";
+import { ManifestParser } from "../../core/ManifestParser.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
 
 export async function moduleAdd(
   manifestPath: string,

@@ -1,9 +1,9 @@
 import chalk from "chalk";
 import ora from "ora";
-import { AuthService } from "../../core/AuthService";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
-import { marketplaceInstall } from "./install";
-import type { Module } from "../../types/marketplace";
+import { AuthService } from "../../core/AuthService.js";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { marketplaceInstall } from "./install.js";
+import type { Module } from "../../types/marketplace.js";
 
 const PAGE_SIZE = 10;
 

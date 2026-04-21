@@ -13,7 +13,7 @@ fastify.listen({ port: 3000 });
 export const paymentsModule = {
   name: "payments",
   route:
-    "import { paymentsRouter } from './modules/payments';\nfastify.register(paymentsRouter, { prefix: '/api/payments' });",
+    "import { paymentsRouter } from './modules/payments.js';\nfastify.register(paymentsRouter, { prefix: '/api/payments' });",
   middleware:
-    "import { validatePayment } from './modules/payments';\nfastify.addHook('preHandler', validatePayment);",
+    "import { validatePayment } from './modules/payments.js';\nfastify.addHook('preHandler', validatePayment);",
 };

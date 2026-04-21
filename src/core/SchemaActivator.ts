@@ -5,7 +5,7 @@ import path from "path";
 // Definição dos módulos conhecidos do kaven-framework
 // ============================================================
 
-export type ModuleId = "auth" | "billing" | "projects" | "notifications" | "marketing-tracking" | "service-tokens";
+export type ModuleId = "auth" | "billing" | "projects" | "notifications" | "marketing-tracking";
 
 export interface KavenModuleDef {
   id: ModuleId;
@@ -71,14 +71,6 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     enums: ["TrackingSource"],
     dependsOn: [],
   },
-  {
-    id: "service-tokens",
-    label: "Service Tokens",
-    description: "Agent authentication tokens for AIOX integration",
-    models: ["ServiceToken"],
-    enums: [],
-    dependsOn: [],
-  },
 ];
 
 // ============================================================
@@ -89,6 +81,9 @@ const BEGIN_MARKER = (moduleId: string) =>
   `// [KAVEN_MODULE:${moduleId.toUpperCase()} BEGIN]`;
 const END_MARKER = (moduleId: string) =>
   `// [KAVEN_MODULE:${moduleId.toUpperCase()} END]`;
+
+/** Regex robusto para capturar comentário e conteúdo, tolerante a espaços variáveis */
+const COMMENT_REGEX = /^(\s*)\/\/\s*(.*)$/;
 
 // ============================================================
 // SchemaActivator — lê/escreve schema.extended.prisma
@@ -127,14 +122,32 @@ export class SchemaActivator {
     await fs.writeFile(this.schemaPath, content, "utf-8");
   }
 
+  /** Valida se os marcadores do módulo estão pareados corretamente */
+  private validateMarkers(content: string, moduleId: string): void {
+    const begin = BEGIN_MARKER(moduleId);
+    const end = END_MARKER(moduleId);
+
+    const hasBegin = content.includes(begin);
+    const hasEnd = content.includes(end);
+
+    if (hasBegin && !hasEnd) {
+      throw new Error(`Marcador órfão detectado: Faltando END para o módulo "${moduleId}".`);
+    }
+    if (!hasBegin && hasEnd) {
+      throw new Error(`Marcador órfão detectado: Faltando BEGIN para o módulo "${moduleId}".`);
+    }
+    if (!hasBegin && !hasEnd) {
+      throw new Error(`O módulo "${moduleId}" não possui uma seção marcada no schema.`);
+    }
+
+    // Verifica se BEGIN vem antes de END
+    if (content.indexOf(begin) > content.indexOf(end)) {
+      throw new Error(`Marcadores invertidos para o módulo "${moduleId}".`);
+    }
+  }
+
   /**
    * Detecta se um módulo está ativo no schema.
-   *
-   * Estratégia:
-   * 1. Se existirem marcadores BEGIN/END: verifica se o conteúdo dentro
-   *    dos marcadores NÃO está completamente comentado.
-   * 2. Se não houver marcadores: verifica se algum dos models principais
-   *    do módulo está presente e não comentado no arquivo.
    */
   async getModuleStatus(def: KavenModuleDef): Promise<ModuleStatus> {
     const content = await this.readSchema();
@@ -149,7 +162,6 @@ export class SchemaActivator {
       const block = this.extractBlock(content, def.id);
       active = block !== null && this.isBlockActive(block);
     } else {
-      // Sem marcadores: verifica presença de pelo menos um model descomentado
       active = def.models.some((modelName) =>
         this.isModelActive(content, modelName),
       );
@@ -166,53 +178,22 @@ export class SchemaActivator {
     };
   }
 
-  /** Ativa um módulo: se tem marcadores, descomenta o bloco; senão, injeta o bloco */
   async activateModule(def: KavenModuleDef): Promise<void> {
     const content = await this.readSchema();
-    const begin = BEGIN_MARKER(def.id);
-    const end = END_MARKER(def.id);
+    this.validateMarkers(content, def.id);
 
-    if (content.includes(begin) && content.includes(end)) {
-      const updated = this.uncommentBlock(content, def.id);
-      await this.writeSchema(updated);
-      return;
-    }
-
-    // Módulo não tem seção marcada — sem template para injetar
-    throw new Error(
-      `O módulo "${def.id}" não possui uma seção marcada (BEGIN/END) no schema.\n` +
-        `Adicione o bloco do módulo manualmente com os marcadores:\n` +
-        `  ${begin}\n` +
-        `  ... models do módulo ...\n` +
-        `  ${end}`,
-    );
+    const updated = this.uncommentBlock(content, def.id);
+    await this.writeSchema(updated);
   }
 
-  /** Desativa um módulo: comenta todos os models do bloco */
   async deactivateModule(def: KavenModuleDef): Promise<void> {
     const content = await this.readSchema();
-    const begin = BEGIN_MARKER(def.id);
-    const end = END_MARKER(def.id);
-
-    if (!content.includes(begin) || !content.includes(end)) {
-      throw new Error(
-        `O módulo "${def.id}" não possui marcadores BEGIN/END no schema. ` +
-          `Não é possível desativar automaticamente.`,
-      );
-    }
+    this.validateMarkers(content, def.id);
 
     const updated = this.commentBlock(content, def.id);
     await this.writeSchema(updated);
   }
 
-  // ──────────────────────────────────────────────
-  // Helpers de manipulação de blocos
-  // ──────────────────────────────────────────────
-
-  /**
-   * Extrai o conteúdo entre os marcadores BEGIN e END (exclusive).
-   * Retorna null se os marcadores não forem encontrados.
-   */
   private extractBlock(content: string, moduleId: string): string | null {
     const begin = BEGIN_MARKER(moduleId);
     const end = END_MARKER(moduleId);
@@ -233,10 +214,6 @@ export class SchemaActivator {
     return lines.slice(beginIdx + 1, endIdx).join("\n");
   }
 
-  /**
-   * Verifica se um bloco tem ao menos uma linha não-comentada relevante
-   * (ignora linhas vazias e comentários simples).
-   */
   private isBlockActive(block: string): boolean {
     return block.split("\n").some((line) => {
       const trimmed = line.trim();
@@ -249,10 +226,6 @@ export class SchemaActivator {
     });
   }
 
-  /**
-   * Verifica se um model específico está ativo (não comentado) no schema.
-   * Procura pela linha `model ModelName {` sem `//` antes.
-   */
   private isModelActive(content: string, modelName: string): boolean {
     const lines = content.split("\n");
     for (const line of lines) {
@@ -267,9 +240,6 @@ export class SchemaActivator {
     return false;
   }
 
-  /**
-   * Comenta todas as linhas não-comentadas dentro do bloco BEGIN/END.
-   */
   private commentBlock(content: string, moduleId: string): string {
     const begin = BEGIN_MARKER(moduleId);
     const end = END_MARKER(moduleId);
@@ -295,7 +265,7 @@ export class SchemaActivator {
         if (trimmed.length === 0) {
           result.push(line);
         } else if (trimmed.startsWith("//")) {
-          result.push(line); // já comentado
+          result.push(line);
         } else {
           result.push(`// ${line}`);
         }
@@ -307,9 +277,6 @@ export class SchemaActivator {
     return result.join("\n");
   }
 
-  /**
-   * Remove `// ` do início das linhas dentro do bloco BEGIN/END.
-   */
   private uncommentBlock(content: string, moduleId: string): string {
     const begin = BEGIN_MARKER(moduleId);
     const end = END_MARKER(moduleId);
@@ -331,9 +298,9 @@ export class SchemaActivator {
       }
 
       if (inBlock) {
-        // Remove exatamente um nível de comentário preservando identação
-        const match = line.match(/^(\s*)\/\/\s?(.*)$/);
+        const match = line.match(COMMENT_REGEX);
         if (match) {
+          // match[1] é a indentação, match[2] é o conteúdo sem // e sem o primeiro espaço opcional
           result.push(match[1] + match[2]);
         } else {
           result.push(line);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { TransactionalFileSystem } from "../../src/infrastructure/TransactionalFileSystem";
+import { TransactionalFileSystem } from "../../src/infrastructure/TransactionalFileSystem.js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { MarketplaceClient } from "../../src/infrastructure/MarketplaceClient";
+import { MarketplaceClient } from "../../src/infrastructure/MarketplaceClient.js";
 import {
   AuthenticationError,
   LicenseRequiredError,
@@ -7,7 +7,7 @@ import {
   NotFoundError,
   RateLimitError,
   ServerError,
-} from "../../src/infrastructure/errors";
+} from "../../src/infrastructure/errors.js";
 
 // ──────────────────────────────────────────────────────────────
 // Helpers

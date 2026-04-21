@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { configFeatures } from "../../../src/commands/config/features";
+import { configFeatures } from "../../../src/commands/config/features.js";
 import * as fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";

@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { AuthService } from "../../core/AuthService";
+import { AuthService } from "../../core/AuthService.js";
 
 export async function authLogout(): Promise<void> {
   const authService = new AuthService();

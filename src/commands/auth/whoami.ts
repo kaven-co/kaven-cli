@@ -1,6 +1,6 @@
 import chalk from "chalk";
-import { AuthService } from "../../core/AuthService";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+import { AuthService } from "../../core/AuthService.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
 
 export async function authWhoami(): Promise<void> {
   const telemetry = TelemetryBuffer.getInstance();

@@ -1,11 +1,34 @@
 import chalk from "chalk";
 import ora from "ora";
-import path from "path";
-import { spawn } from "child_process";
-import fs from "fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
 
-const packageJsonPath = path.join(__dirname, "../../..", "package.json");
-const PACKAGE_JSON = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as Record<string, string>;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Resolve package.json relative to this file (works in both src/ and dist/)
+function getPackageJson() {
+  const possiblePaths = [
+    path.join(__dirname, "../../package.json"),      // src/commands/upgrade/check.ts
+    path.join(__dirname, "../../../package.json"),   // dist/chunks/...
+    path.join(process.cwd(), "package.json"),        // fallback to cwd
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        return JSON.parse(fs.readFileSync(p, "utf8")) as Record<string, string>;
+      } catch {
+        continue;
+      }
+    }
+  }
+  return { version: "0.4.2-alpha.0" }; // Hardcoded fallback
+}
+
+const PACKAGE_JSON = getPackageJson();
 const CURRENT_VERSION = PACKAGE_JSON.version;
 const CLI_NAME = "kaven-cli";
 
@@ -16,15 +39,14 @@ export async function upgradeCheck(): Promise<void> {
   const spinner = ora("Checking for updates...").start();
 
   try {
-    // Fetch latest version from npm registry
     const response = await fetch(`https://registry.npmjs.org/${CLI_NAME}`);
     if (!response.ok) {
       spinner.fail("Could not check for updates");
       return;
     }
 
-    const data = (await response.json()) as Record<string, unknown>;
-    const distTags = data["dist-tags"] as Record<string, string> | undefined;
+    const data = (await response.json()) as { "dist-tags": Record<string, string> };
+    const distTags = data["dist-tags"];
     const latestVersion = distTags?.latest || CURRENT_VERSION;
 
     spinner.stop();
@@ -40,7 +62,6 @@ export async function upgradeCheck(): Promise<void> {
       return;
     }
 
-    // Check if update available
     const current = parseVersion(CURRENT_VERSION);
     const latest = parseVersion(latestVersion);
 
@@ -82,14 +103,13 @@ export async function upgradeInstall(): Promise<void> {
   const spinner = ora("Fetching latest version...").start();
 
   try {
-    // Get latest version
     const response = await fetch(`https://registry.npmjs.org/${CLI_NAME}`);
     if (!response.ok) {
       throw new Error("Failed to fetch package info");
     }
 
-    const data = (await response.json()) as Record<string, unknown>;
-    const distTags = data["dist-tags"] as Record<string, string> | undefined;
+    const data = (await response.json()) as { "dist-tags": Record<string, string> };
+    const distTags = data["dist-tags"];
     const latestVersion = distTags?.latest || CURRENT_VERSION;
 
     if (latestVersion === CURRENT_VERSION) {
@@ -99,12 +119,10 @@ export async function upgradeInstall(): Promise<void> {
 
     spinner.text = `Installing ${CLI_NAME}@${latestVersion}...`;
 
-    // Determine package manager
     const packageManager = process.env.npm_config_user_agent?.includes("pnpm")
       ? "pnpm"
       : "npm";
 
-    // Install with appropriate package manager
     const exitCode = await runCommand(packageManager, [
       "install",
       "-g",
@@ -120,7 +138,6 @@ export async function upgradeInstall(): Promise<void> {
 
     spinner.succeed(`Updated to ${latestVersion}`);
 
-    // Health check after install
     const healthSpinner = ora("Running health check...").start();
     const health = await verifyInstallation();
 
@@ -141,14 +158,10 @@ export async function upgradeInstall(): Promise<void> {
   }
 }
 
-/**
- * Verify CLI installation is working
- */
 async function verifyInstallation(): Promise<{ ok: boolean; errors: string[] }> {
   const errors: string[] = [];
 
   try {
-    // Check if kaven command is available
     const code = await runCommand("kaven", ["--version"], { stdio: "pipe" });
     if (code !== 0) {
       errors.push("kaven command not available in PATH");
@@ -160,9 +173,6 @@ async function verifyInstallation(): Promise<{ ok: boolean; errors: string[] }> 
   return { ok: errors.length === 0, errors };
 }
 
-/**
- * Run shell command
- */
 function runCommand(
   cmd: string,
   args: string[],
@@ -175,9 +185,6 @@ function runCommand(
   });
 }
 
-/**
- * Parse semver version
- */
 function parseVersion(version: string): {
   major: number;
   minor: number;

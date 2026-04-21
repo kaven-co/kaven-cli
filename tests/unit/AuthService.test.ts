@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { AuthService } from "../../src/core/AuthService";
-import { AuthTokens } from "../../src/types/auth";
+import { AuthService } from "../../src/core/AuthService.js";
+import { AuthTokens } from "../../src/types/auth.js";
 
 // ──────────────────────────────────────────────────────────────
 // Helpers

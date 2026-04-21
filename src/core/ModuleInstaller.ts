@@ -1,5 +1,5 @@
-import { TransactionalFileSystem } from "../infrastructure/TransactionalFileSystem";
-import { MarkerService } from "./MarkerService";
+import { TransactionalFileSystem } from "../infrastructure/TransactionalFileSystem.js";
+import { MarkerService } from "./MarkerService.js";
 import { ScriptRunner } from "./ScriptRunner.js";
 import fs from "fs-extra";
 import path from "path";

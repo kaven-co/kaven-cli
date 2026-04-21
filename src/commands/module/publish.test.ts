@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { moduleJsonSchema } from "./publish";
+import { moduleJsonSchema } from "./publish.js";
 
 describe("C2.2: Module Publish", () => {
   it("C2.2.1: Should validate module.json schema", () => {

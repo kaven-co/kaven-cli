@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { main } from './index';
+import { main } from './index.js';
 
 describe('CLI Entry Point', () => {
   it('should be defined', () => {

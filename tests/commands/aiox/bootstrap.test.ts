@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runEnvironmentBootstrap } from "../../../src/commands/init/aiox-bootstrap";
+import { runEnvironmentBootstrap } from "../../../src/commands/init/aiox-bootstrap.js";
 import * as fs from "node:fs";
 import { execSync } from "node:child_process";
 

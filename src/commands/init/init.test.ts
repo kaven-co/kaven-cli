@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import { ProjectInitializer } from "../../core/ProjectInitializer";
+import { ProjectInitializer } from "../../core/ProjectInitializer.js";
 
 describe("C2.1: kaven init Bootstrap", () => {
   let tempDir: string;

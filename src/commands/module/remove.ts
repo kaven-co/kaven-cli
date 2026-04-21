@@ -2,9 +2,9 @@ import chalk from "chalk";
 import ora from "ora";
 import path from "path";
 import fs from "fs-extra";
-import { ModuleInstaller } from "../../core/ModuleInstaller";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
-import { MarkerService } from "../../core/MarkerService";
+import { ModuleInstaller } from "../../core/ModuleInstaller.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
+import { MarkerService } from "../../core/MarkerService.js";
 
 export async function moduleRemove(moduleName: string, projectRoot?: string): Promise<void> {
   const telemetry = TelemetryBuffer.getInstance();

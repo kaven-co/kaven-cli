@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { ModuleManifest } from "../types/manifest";
-import { DeviceCodeResponse, TokenPollResult, AuthTokens } from "../types/auth";
+import { ModuleManifest } from "../types/manifest.js";
+import { DeviceCodeResponse, TokenPollResult, AuthTokens } from "../types/auth.js";
 import {
   Module,
   ModuleRelease,
@@ -10,7 +10,7 @@ import {
   DownloadToken,
   ModuleListFilters,
   RefreshTokenResponse,
-} from "../types/marketplace";
+} from "../types/marketplace.js";
 import {
   AuthenticationError,
   LicenseRequiredError,
@@ -18,8 +18,9 @@ import {
   NotFoundError,
   RateLimitError,
   ServerError,
-} from "./errors";
-import type { AuthService } from "../core/AuthService";
+  ensureError,
+} from "./errors.js";
+import type { AuthService } from "../core/AuthService.js";
 
 const DEFAULT_BASE_URL = "https://marketplace.kaven.site";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -232,7 +233,8 @@ export class MarketplaceClient {
         }
         // Return empty object for no-body responses (204, etc.)
         return {} as T;
-      } catch (error) {
+      } catch (err: unknown) {
+        const error = ensureError(err);
         // Re-throw our typed errors without retrying on 4xx
         if (
           error instanceof AuthenticationError ||
@@ -246,7 +248,7 @@ export class MarketplaceClient {
         // Network / timeout errors
         if (
           error instanceof TypeError ||
-          (error instanceof Error && error.name === "AbortError")
+          error.name === "AbortError"
         ) {
           const networkError = new NetworkError(
             error.name === "AbortError"
@@ -338,8 +340,9 @@ export class MarketplaceClient {
         default:
           throw new Error(`Unexpected error: ${errorCode}`);
       }
-    } catch (error) {
-      const nodeError = error as NodeJS.ErrnoException;
+    } catch (err: unknown) {
+      const error = ensureError(err);
+      const nodeError = error as { code?: string };
       if (
         nodeError.code === "ECONNREFUSED" ||
         nodeError.code === "ENOTFOUND"
@@ -350,6 +353,7 @@ export class MarketplaceClient {
       }
       throw error;
     }
+
   }
 
   /**

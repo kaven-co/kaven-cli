@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ModuleInstaller, ModuleManifest } from "../../src/core/ModuleInstaller";
-import { MarkerService } from "../../src/core/MarkerService";
+import { ModuleInstaller, ModuleManifest } from "../../src/core/ModuleInstaller.js";
+import { MarkerService } from "../../src/core/MarkerService.js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
@@ -17,7 +17,7 @@ describe("ModuleInstaller Integration", () => {
     await fs.writeFile(
       appFile,
       `
-import { app } from './app';
+import { app } from './app.js';
 // [ANCHOR:ROUTES]
 app.listen(3000);
     `,

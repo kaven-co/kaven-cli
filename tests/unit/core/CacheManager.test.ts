@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { CacheManager } from "../../../src/core/CacheManager";
+import { CacheManager } from "../../../src/core/CacheManager.js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";

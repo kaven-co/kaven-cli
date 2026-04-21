@@ -1,7 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { AuthTokens } from "../types/auth";
+import { AuthTokens } from "../types/auth.js";
 
 export interface UserInfo {
   id: string;

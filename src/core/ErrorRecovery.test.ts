@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import { ErrorRecovery } from "./ErrorRecovery";
+import { ErrorRecovery } from "./ErrorRecovery.js";
 
 describe("C2.7: Error Recovery", () => {
   let tempDir: string;

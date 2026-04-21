@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { MarkerService } from "../../src/core/MarkerService";
-import { sampleApp, paymentsModule } from "../fixtures/sample-app";
+import { MarkerService } from "../../src/core/MarkerService.js";
+import { sampleApp, paymentsModule } from "../fixtures/sample-app.js";
 
 describe("MarkerService with real module", () => {
   const service = new MarkerService();

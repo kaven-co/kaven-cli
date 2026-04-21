@@ -1,8 +1,8 @@
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { MarkerService } from "./MarkerService";
-import { ManifestParser } from "./ManifestParser";
+import { MarkerService } from "./MarkerService.js";
+import { ManifestParser } from "./ManifestParser.js";
 
 export interface DoctorCheckResult {
   type: "anchor" | "marker" | "dependency";

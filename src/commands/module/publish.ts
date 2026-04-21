@@ -5,8 +5,8 @@ import fs from "fs-extra";
 import crypto from "crypto";
 import os from "os";
 import { z } from "zod";
-import { AuthService } from "../../core/AuthService";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
+import { AuthService } from "../../core/AuthService.js";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
 
 export interface PublishOptions {
   dryRun?: boolean;
