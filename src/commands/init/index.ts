@@ -9,7 +9,7 @@ import {
   InitPromptAnswers,
 } from "../../core/ProjectInitializer.js";
 import { configManager } from "../../core/ConfigManager.js";
-import { I18nService } from "../../core/I18nService.js";
+import { I18nService, type Language } from "../../core/I18nService.js";
 import { getBrandingBanner } from "../../core/Branding.js";
 import { runEnvironmentBootstrap } from "./aiox-bootstrap.js";
 
@@ -27,11 +27,26 @@ export async function initProject(
   const i18n = await I18nService.getInstance();
   const initializer = new ProjectInitializer();
   
-  // Welcome Banner
+  // 1. Language First (P0) — Just like AIOX Wizard
+  const selectedLang = await select({
+    message: "🌐 Select Language / Selecione o Idioma:",
+    options: [
+      { label: "English", value: "en" },
+      { label: "Português (Brasil)", value: "pt-BR" },
+    ],
+    initialValue: "en",
+  }) as Language;
+  handleCancel(selectedLang);
+  
+  await i18n.setLanguage(selectedLang);
+  await configManager.initialize();
+  await configManager.set("language", selectedLang, "global");
+
+  // 2. Welcome Banner with chosen language
   console.log(getBrandingBanner());
   intro(pc.cyan(i18n.t("init.intro")));
 
-  // 1. Resolve Project Name
+  // 3. Resolve Project Name
   let name = projectName;
   if (!name) {
     if (options.defaults) {
@@ -57,10 +72,9 @@ export async function initProject(
     process.exit(1);
   }
 
-  // 2. Prompt Answers
+  // 4. Prompt Answers
   let answers: InitPromptAnswers;
   if (options.defaults) {
-    await configManager.initialize();
     const configDefaults = configManager.getAll().projectDefaults || {};
     answers = {
       dbUrl: options.dbUrl || configDefaults.dbUrl || `postgresql://user:password@localhost:5432/${name}`,
@@ -69,7 +83,6 @@ export async function initProject(
       currency: options.currency || configDefaults.currency || "USD",
     };
   } else {
-    await configManager.initialize();
     const configDefaults = configManager.getAll().projectDefaults || {};
 
     const dbUrl = await text({
@@ -114,7 +127,7 @@ export async function initProject(
 
   const s = spinner();
 
-  // 3. Execution
+  // 5. Execution
   s.start("Cloning kaven-template...");
   try {
     await initializer.cloneTemplate(targetDir, options.template);
@@ -130,12 +143,11 @@ export async function initProject(
   await initializer.removeGitDir(targetDir);
   await initializer.replacePlaceholders(targetDir, { ...answers, projectName: name });
 
-  // 3.1 Inject Kaven Authority Rules (CLAUDE.md)
+  // 5.1 Inject Kaven Authority Rules (CLAUDE.md)
   try {
     const claudePath = path.join(targetDir, ".claude", "CLAUDE.md");
     await fs.ensureDir(path.dirname(claudePath));
     
-    // Resolve template path using ESM meta-url
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const templatePath = path.resolve(__dirname, "../../core/templates/CLAUDE.md.hbs");
@@ -148,9 +160,7 @@ export async function initProject(
       );
       await fs.writeFile(claudePath, finalContent, "utf-8");
     }
-  } catch {
-    // Non-fatal if rule injection fails
-  }
+  } catch { /* ignore */ }
 
   s.stop(pc.green("Project configured"));
 
@@ -174,7 +184,7 @@ export async function initProject(
     }
   }
 
-  // 4. AI Squad
+  // 6. AI Squad
   if (options.withSquad) {
     s.start("Infecting AIOX intelligence...");
     const squadResult = await initializer.installSquad(targetDir);
@@ -186,10 +196,10 @@ export async function initProject(
     }
   }
 
-  // 5. Environment
+  // 7. Environment
   await runEnvironmentBootstrap(targetDir, { skipAiox: options.skipAiox });
 
-  // 6. Summary
+  // 8. Summary
   note(
     `cd ${pc.cyan(name)}\ncp .env.example .env\nnpx prisma migrate dev\npnpm dev`,
     "Next Steps"
@@ -199,7 +209,6 @@ export async function initProject(
 
   // Save defaults to Global Config
   try {
-    await configManager.initialize();
     await configManager.set("projectDefaults", {
       dbUrl: answers.dbUrl,
       emailProvider: answers.emailProvider as unknown as "postmark" | "resend" | "ses" | "smtp",

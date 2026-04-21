@@ -1,21 +1,25 @@
 import pc from "picocolors";
 
-const KAVEN_ASCII = `
-   __  __                             
-  / / / /__ _ _  _____  ____          
- / /_/ / _ \\ | |/ / _ \\/ __ \\         
-/ __  /  __/ | / /  __/ / / /         
-/_/ /_/\\___/ |__/ \\___/_/ /_/ CLI     
+/**
+ * High-legibility Block ASCII Art for Kaven CLI
+ * Optimized for both small and large terminals.
+ */
+const KAVEN_BLOCK_ASCII = `
+ ██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗
+ ██║ ██╔╝██╔══██╗██║   ██║██╔════╝████╗  ██║
+ █████╔╝ ███████║██║   ██║█████╗  ██╔██╗ ██║
+ ██╔═██╗ ██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║
+ ██║  ██╗██║  ██║ ╚████╔╝ ███████╗██║ ╚████║
+ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝
 `;
 
-
 export function getBrandingBanner(): string {
-  const lines = KAVEN_ASCII.split("\n");
+  const lines = KAVEN_BLOCK_ASCII.split("\n");
   const colored = lines
     .map((line) => pc.cyan(line))
     .join("\n");
   
-  return `\n${colored}\n${pc.dim("  The Official Kaven Framework Orchestrator")}\n`;
+  return `\n${colored}\n${pc.dim("  The Premium Framework Orchestrator for SaaS")}\n`;
 }
 
 export const THEME = {
