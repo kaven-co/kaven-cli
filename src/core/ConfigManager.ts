@@ -1,18 +1,23 @@
-import path from "path";
+import path from "node:path";
 import fs from "fs-extra";
-import os from "os";
+import os from "node:os";
+import yaml from "js-yaml";
 import { z } from "zod";
 
-const CONFIG_DIR = path.join(os.homedir(), ".kaven");
-const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
+const GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".kaven");
+const GLOBAL_CONFIG_PATH = path.join(GLOBAL_CONFIG_DIR, "config.json");
+const PROJECT_CONFIG_FILENAME = "kaven-config.yaml";
 
 export const configSchema = z.object({
   registry: z.string().url().default("https://marketplace.kaven.site"),
   telemetry: z.boolean().default(true),
   theme: z.enum(["light", "dark"]).default("dark"),
-  locale: z.string().default("en-US"),
-  // Custom registry support
+  language: z.enum(["en", "pt-BR"]).default("en"),
   customRegistry: z.string().url().optional(),
+  // Project-specific state (stored in kaven-config.yaml)
+  projectId: z.string().uuid().optional(),
+  activeModules: z.array(z.string()).default([]),
+  capabilities: z.record(z.string(), z.union([z.string(), z.boolean(), z.number()])).default({}),
   // For storing user preferences
   lastLogin: z.string().datetime().optional(),
   projectDefaults: z
@@ -28,149 +33,126 @@ export const configSchema = z.object({
 export type KavenConfig = z.infer<typeof configSchema>;
 
 export class ConfigManager {
-  private config: KavenConfig;
+  private globalConfig: Partial<KavenConfig> = {};
+  private projectConfig: Partial<KavenConfig> = {};
+  private currentConfig: KavenConfig;
 
   constructor() {
-    this.config = {
-      registry: "https://marketplace.kaven.site",
-      telemetry: true,
-      theme: "dark",
-      locale: "en-US",
-    };
+    this.currentConfig = configSchema.parse({});
   }
 
   async initialize(): Promise<void> {
-    await fs.ensureDir(CONFIG_DIR);
-    if (await fs.pathExists(CONFIG_PATH)) {
+    // 1. Load Global Config
+    await fs.ensureDir(GLOBAL_CONFIG_DIR);
+    if (await fs.pathExists(GLOBAL_CONFIG_PATH)) {
       try {
-        const raw = await fs.readJson(CONFIG_PATH);
-        const parsed = configSchema.safeParse(raw);
-        if (parsed.success) {
-          this.config = parsed.data;
-        } else {
-          // If validation fails, use defaults
-          this.config = {
-            registry: "https://marketplace.kaven.site",
-            telemetry: true,
-            theme: "dark",
-            locale: "en-US",
-          };
-        }
+        this.globalConfig = await fs.readJson(GLOBAL_CONFIG_PATH);
       } catch {
-        // If file is corrupted, start fresh
-        this.config = {
-          registry: "https://marketplace.kaven.site",
-          telemetry: true,
-          theme: "dark",
-          locale: "en-US",
-        };
+        this.globalConfig = {};
       }
+    }
+
+    // 2. Load Project Config
+    const projectRoot = this.findProjectRoot();
+    if (projectRoot) {
+      const projectPath = path.join(projectRoot, PROJECT_CONFIG_FILENAME);
+      if (await fs.pathExists(projectPath)) {
+        try {
+          const content = await fs.readFile(projectPath, "utf-8");
+          this.projectConfig = yaml.load(content) as Partial<KavenConfig>;
+        } catch {
+          this.projectConfig = {};
+        }
+      }
+    }
+
+    // 3. Resolve Final Config
+    this.resolve();
+  }
+
+  private resolve() {
+    this.currentConfig = configSchema.parse({
+      ...this.globalConfig,
+      ...this.projectConfig,
+    });
+  }
+
+  private findProjectRoot(): string | null {
+    let curr = process.cwd();
+    while (curr !== path.parse(curr).root) {
+      if (fs.existsSync(path.join(curr, "package.json"))) {
+        return curr;
+      }
+      curr = path.dirname(curr);
+    }
+    return null;
+  }
+
+  /**
+   * Get config value with layers support
+   */
+  get<K extends keyof KavenConfig>(key: K): KavenConfig[K] {
+    const envVar = `KAVEN_${key.toUpperCase()}`;
+    if (process.env[envVar] !== undefined) {
+      const val = process.env[envVar];
+      if (typeof this.currentConfig[key] === "boolean") return (val === "true") as unknown as KavenConfig[K];
+      if (typeof this.currentConfig[key] === "number") return Number(val) as unknown as KavenConfig[K];
+      return val as unknown as KavenConfig[K];
+    }
+    return this.currentConfig[key];
+  }
+
+  /**
+   * Set config value. 
+   * By default, it sets to Project Config if in a Kaven project, otherwise Global.
+   */
+  async set<K extends keyof KavenConfig>(key: K, value: KavenConfig[K], scope: "global" | "project" = "project"): Promise<void> {
+    if (scope === "project") {
+      this.projectConfig[key] = value;
+      await this.persistProject();
     } else {
-      // Initialize with defaults
-      this.config = {
-        registry: "https://marketplace.kaven.site",
-        telemetry: true,
-        theme: "dark",
-        locale: "en-US",
-      };
-      await this.persist();
+      this.globalConfig[key] = value;
+      await this.persistGlobal();
     }
+    this.resolve();
   }
 
-  /**
-   * Get config value with env var override support
-   * Priority: ENV VAR > config file > CLI arg > default
-   */
-  get(key: keyof KavenConfig, envVarName?: string): unknown {
-    // Check environment variable override
-    if (envVarName) {
-      const envValue = process.env[envVarName];
-      if (envValue !== undefined) {
-        return envValue;
-      }
-    }
-
-    // Check config file
-    const value = this.config[key];
-    if (value !== undefined) {
-      return value;
-    }
-
-    // Return default from schema
-    const defaults = configSchema.parse({});
-    return defaults[key];
+  async persistGlobal(): Promise<void> {
+    await fs.ensureDir(GLOBAL_CONFIG_DIR);
+    await fs.writeJson(GLOBAL_CONFIG_PATH, this.globalConfig, { spaces: 2 });
   }
 
-  /**
-   * Set config value and persist to disk
-   */
-  async set(key: keyof KavenConfig, value: unknown): Promise<void> {
-    const updateObj = { [key]: value };
-    const updated = configSchema.safeParse({ ...this.config, ...updateObj });
-
-    if (!updated.success) {
-      const errors = updated.error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join(", ");
-      throw new Error(`Invalid config: ${errors}`);
-    }
-
-    this.config = updated.data;
-    await this.persist();
+  async persistProject(): Promise<void> {
+    const root = this.findProjectRoot();
+    if (!root) return;
+    const projectPath = path.join(root, PROJECT_CONFIG_FILENAME);
+    const content = yaml.dump(this.projectConfig, { lineWidth: 120, noRefs: true });
+    await fs.writeFile(projectPath, content, "utf-8");
   }
 
-  /**
-   * Get all config
-   */
-  getAll(): KavenConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * Reset config to defaults
-   */
   async reset(): Promise<void> {
-    this.config = {
-      registry: "https://marketplace.kaven.site",
-      telemetry: true,
-      theme: "dark",
-      locale: "en-US",
-    };
-    await this.persist();
+    this.globalConfig = {};
+    this.projectConfig = {};
+    await this.persistGlobal();
+    await this.persistProject();
+    this.resolve();
   }
 
-  /**
-   * Persist config to disk
-   */
-  private async persist(): Promise<void> {
-    await fs.ensureDir(CONFIG_DIR);
-    await fs.writeJson(CONFIG_PATH, this.config, { spaces: 2 });
-  }
-
-  /**
-   * Get registry URL (custom or default)
-   */
   getRegistry(): string {
-    return (this.config.customRegistry || this.config.registry || "https://marketplace.kaven.site") as string;
+    return this.currentConfig.customRegistry || this.currentConfig.registry;
   }
 
-  /**
-   * Check if telemetry is enabled (can be overridden by env var)
-   */
-  isTelemetryEnabled(): boolean {
-    if (process.env.KAVEN_TELEMETRY === "0") {
-      return false;
-    }
-    return this.config.telemetry !== false;
+  getAll(): KavenConfig {
+    return { ...this.currentConfig };
   }
 
-  /**
-   * Get config directory path
-   */
+  getProjectRoot(): string | null {
+    return this.findProjectRoot();
+  }
+
   getConfigDir(): string {
-    return CONFIG_DIR;
+    return GLOBAL_CONFIG_DIR;
   }
 }
 
-// Export singleton instance
 export const configManager = new ConfigManager();
