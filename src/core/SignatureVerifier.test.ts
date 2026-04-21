@@ -7,8 +7,8 @@ import {
   computeFileChecksum,
   verifyEd25519Signature,
   verifyDownload,
-} from "./SignatureVerifier";
-import { SignatureVerificationError } from "../infrastructure/errors";
+} from "./SignatureVerifier.js";
+import { SignatureVerificationError } from "../infrastructure/errors.js";
 
 describe("SignatureVerifier", () => {
   let privateKey: crypto.KeyObject;

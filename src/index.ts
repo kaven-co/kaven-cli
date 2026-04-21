@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { moduleDoctor } from "./commands/module/doctor";
-import { moduleAdd } from "./commands/module/add";
-import { moduleRemove } from "./commands/module/remove";
-import { modulePublish } from "./commands/module/publish";
+import { moduleDoctor } from "./commands/module/doctor.js";
+import { moduleAdd } from "./commands/module/add.js";
+import { moduleRemove } from "./commands/module/remove.js";
+import { modulePublish } from "./commands/module/publish.js";
 import {
   moduleActivate,
   moduleDeactivate,
   moduleListActivation,
-} from "./commands/module/activate";
-import { authLogin } from "./commands/auth/login";
-import { authLogout } from "./commands/auth/logout";
-import { authWhoami } from "./commands/auth/whoami";
-import { marketplaceList } from "./commands/marketplace/list";
-import { marketplaceInstall } from "./commands/marketplace/install";
-import { marketplaceBrowse } from "./commands/marketplace/browse";
-import { telemetryView } from "./commands/telemetry/view";
+} from "./commands/module/activate.js";
+import { authLogin } from "./commands/auth/login.js";
+import { authLogout } from "./commands/auth/logout.js";
+import { authWhoami } from "./commands/auth/whoami.js";
+import { marketplaceList } from "./commands/marketplace/list.js";
+import { marketplaceInstall } from "./commands/marketplace/install.js";
+import { marketplaceBrowse } from "./commands/marketplace/browse.js";
+import { telemetryView } from "./commands/telemetry/view.js";
 import { buildLicenseCommand } from "./commands/license/index.js";
-import { initProject } from "./commands/init/index";
-import { upgradeCommand, upgradeCheck, upgradeInstall } from "./commands/upgrade/index";
-import { cacheStatus, cacheClear } from "./commands/cache/index";
-import { configSet, configGet, configView, configReset } from "./commands/config/index";
-import { configFeatures, type FeatureTier } from "./commands/config/features";
-import { initCi } from "./commands/init-ci/index";
-import { registerAioxCommand } from "./commands/aiox";
+import { initProject } from "./commands/init/index.js";
+import { upgradeCommand, upgradeCheck, upgradeInstall } from "./commands/upgrade/index.js";
+import { cacheStatus, cacheClear } from "./commands/cache/index.js";
+import { configSet, configGet, configView, configReset } from "./commands/config/index.js";
+import { configFeatures, type FeatureTier } from "./commands/config/features.js";
+import { initCi } from "./commands/init-ci/index.js";
+import { registerAioxCommand } from "./commands/aiox/index.js";
 
 export const main = () => {
   const program = new Command();
@@ -31,7 +31,7 @@ export const main = () => {
   program
     .name("kaven")
     .description("The official CLI for the Kaven SaaS boilerplate ecosystem")
-    .version("0.4.1-alpha.0")
+    .version("0.4.2-alpha.0")
     .addHelpText(
       "after",
       `
@@ -548,7 +548,13 @@ Examples:
   program.parse(process.argv);
 };
 
-// Execute main if this is the entry point
-if (require.main === module) {
+// Execute main only if this file is the entry point
+const isMain = process.argv[1] && (
+  process.argv[1].endsWith("/kaven") || 
+  process.argv[1].endsWith("/index.ts") || 
+  process.argv[1].endsWith("/index.js")
+);
+
+if (isMain) {
   main();
 }

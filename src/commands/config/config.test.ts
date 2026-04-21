@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import { ConfigManager } from "../../core/ConfigManager";
+import { ConfigManager } from "../../core/ConfigManager.js";
 
 describe("C2.4: Config Management", () => {
   let tempDir: string;

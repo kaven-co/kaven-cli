@@ -5,6 +5,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.4.2] - 2026-04-21
+
+### Added
+- **Schema Activation Engine**: New `SchemaActivator` core for managing Prisma model visibility via `// [KAVEN_MODULE:BEGIN/END]` markers.
+- **Commands**: `kaven module activate`, `kaven module deactivate`, and `kaven module list`.
+- **AIOX Squad Support**: `kaven init --with-squad` for automated agent infrastructure bootstrap.
+- **Features TUI**: `kaven config features` for interactive capability configuration across 60 flags.
+
+### Changed
+- **ESM Migration**: Full transition to Pure ESM (`type: module`) and `NodeNext` resolution.
+- **Build System**: Switched to `tsup` for more reliable CLI bundling and shimming.
+- **Robustness**: Integrated `ensureError` utility and migrated all catch blocks from `any` to `unknown` for runtime safety.
+
+### Fixed
+- Fixed binary execution issues related to `__dirname` and `require` in ESM scope.
+- Fixed version synchronization between `package.json` and CLI binary.
+- Fixed `STATUS.md` indicators for stabilization phase completion.
+
+---
+
 ## [0.3.1] - 2026-02-28
 
 ### Fixed

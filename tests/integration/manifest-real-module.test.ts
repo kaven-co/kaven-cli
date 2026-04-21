@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ManifestParser } from "../../src/core/ManifestParser";
+import { ManifestParser } from "../../src/core/ManifestParser.js";
 import path from "path";
 
 describe("ManifestParser with real module", () => {

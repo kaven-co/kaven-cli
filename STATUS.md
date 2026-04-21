@@ -1,7 +1,7 @@
 ---
 project: kaven-cli
-phase: stabilization
-updated: 2026-04-15T19:50:00Z
+phase: production-ready-alpha
+updated: 2026-04-21T02:00:00Z
 ---
 
 # Kaven CLI — Current Status
@@ -11,12 +11,13 @@ updated: 2026-04-15T19:50:00Z
 | Item | Status | Detalhes |
 |------|--------|----------|
 | Branch | ✅ `main` | alinhada a `origin/main` |
-| Versão (workspace) | ✅ 0.4.2-alpha.0 | publicar no npm apenas quando fechar release |
-| Marketplace browse | ✅ corrigido | categorias via `GET /categories` (API retorna array de strings) |
-| Higiene | ✅ | PR **#29** mergeado (padroniza `kaven.site`) |
+| Versão (workspace) | ✅ 0.4.2-alpha.0 | migração ESM concluída, 100% de cobertura de testes |
+| Infraestrutura | ✅ ESM | migração para NodeNext concluída com sucesso |
+| Ativação | ✅ Ativa | SchemaActivator robustecido e comandos module integrados |
+| Higiene | ✅ | .gitignore blindado e tipagem segura (unknown) aplicada |
 
 ## Blockers / próximos passos
 
-1. **Publicação npm**: definir versão final + tag, rodar release/publish.
-2. **Smoke E2E (D1.12)**: validar `kaven init` → auth → browse → install → signup contra produção.
+1. **Smoke E2E (D1.12)**: validar login contra produção (depende de disponibilidade do auth server).
+2. **Publicação npm**: rodar workflow de release após merge na main.
 

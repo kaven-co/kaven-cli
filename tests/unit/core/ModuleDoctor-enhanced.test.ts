@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ModuleDoctor } from "../../../src/core/ModuleDoctor";
-import { MarkerService } from "../../../src/core/MarkerService";
-import { ManifestParser } from "../../../src/core/ManifestParser";
+import { ModuleDoctor } from "../../../src/core/ModuleDoctor.js";
+import { MarkerService } from "../../../src/core/MarkerService.js";
+import { ManifestParser } from "../../../src/core/ManifestParser.js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";

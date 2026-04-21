@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
 
 export async function telemetryView(limit: number = 10): Promise<void> {
   const telemetry = TelemetryBuffer.getInstance();

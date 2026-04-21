@@ -7,8 +7,9 @@ import {
   KAVEN_MODULES,
   type KavenModuleDef,
   type ModuleStatus,
-} from "../../core/SchemaActivator";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+} from "../../core/SchemaActivator.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
+import { ensureError } from "../../infrastructure/errors.js";
 
 // ============================================================
 // Types
@@ -182,15 +183,15 @@ export async function moduleActivate(
       Date.now() - startTime,
     );
     await telemetry.flush();
-  } catch (error) {
+  } catch (err: unknown) { const error = ensureError(err);
     spinner.fail(
       chalk.red(
-        `Failed to activate module: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to activate module: ${error.message}`,
       ),
     );
     telemetry.capture(
       "cli.module.activate.error",
-      { moduleName, error: (error as Error).message },
+      { moduleName, error: error.message },
       Date.now() - startTime,
     );
     await telemetry.flush();
@@ -304,15 +305,15 @@ export async function moduleDeactivate(
       Date.now() - startTime,
     );
     await telemetry.flush();
-  } catch (error) {
+  } catch (err: unknown) { const error = ensureError(err);
     spinner.fail(
       chalk.red(
-        `Failed to deactivate module: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to deactivate module: ${error.message}`,
       ),
     );
     telemetry.capture(
       "cli.module.deactivate.error",
-      { moduleName, error: (error as Error).message },
+      { moduleName, error: error.message },
       Date.now() - startTime,
     );
     await telemetry.flush();

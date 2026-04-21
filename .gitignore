@@ -46,7 +46,14 @@ coverage/
 # KAVEN AGENT CORE Artifacts (DO NOT VERSION)
 # ==============================================================================
 .agent/*
+.agents/*
+.aios/*
+.aiox/*
+.antigravity/*
+.gemini/*
 docs/agent/*
+AGENTS.md
+GEMINI.md
 
 # ============================================================================== 
 # Operating System

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { configFeatures } from "./features";
-import { ALL_CAPABILITIES } from "../../lib/capabilities-catalog";
+import { configFeatures } from "./features.js";
+import { ALL_CAPABILITIES } from "../../lib/capabilities-catalog.js";
 import * as fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";

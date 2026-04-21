@@ -78,16 +78,16 @@ vi.mock("fs-extra", () => {
 });
 
 // ── Imports (after mocks) ──
-import { marketplaceInstall } from "../../../../src/commands/marketplace/install";
+import { marketplaceInstall } from "../../../../src/commands/marketplace/install.js";
 import {
   AuthenticationError,
   LicenseRequiredError,
   NetworkError,
-} from "../../../../src/infrastructure/errors";
-import type { Module, DownloadToken } from "../../../../src/types/marketplace";
-import { AuthService } from "../../../../src/core/AuthService";
-import { MarketplaceClient } from "../../../../src/infrastructure/MarketplaceClient";
-import { ModuleInstaller } from "../../../../src/core/ModuleInstaller";
+} from "../../../../src/infrastructure/errors.js";
+import type { Module, DownloadToken } from "../../../../src/types/marketplace.js";
+import { AuthService } from "../../../../src/core/AuthService.js";
+import { MarketplaceClient } from "../../../../src/infrastructure/MarketplaceClient.js";
+import { ModuleInstaller } from "../../../../src/core/ModuleInstaller.js";
 import * as tarModule from "tar";
 import fs from "fs-extra";
 

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import { RegistryResolver } from "./RegistryResolver";
-import { configManager } from "./ConfigManager";
+import { RegistryResolver } from "./RegistryResolver.js";
+import { configManager } from "./ConfigManager.js";
 
 describe("C2.5: Remote Registry Support", () => {
   let tempDir: string;

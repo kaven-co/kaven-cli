@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import fs from "fs-extra";
-import { SignatureVerificationError } from "../infrastructure/errors";
+import { SignatureVerificationError } from "../infrastructure/errors.js";
 
 /**
  * Compute SHA-256 hex checksum of a file.

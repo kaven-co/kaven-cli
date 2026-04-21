@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { MarkerService } from "../../src/core/MarkerService";
+import { MarkerService } from "../../src/core/MarkerService.js";
 
 describe("MarkerService", () => {
   const service = new MarkerService();
 
   const sampleFile = `
-import { app } from './app';
+import { app } from './app.js';
 // [ANCHOR:ROUTES]
 
 app.listen(3000);

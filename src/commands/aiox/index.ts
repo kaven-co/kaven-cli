@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { runEnvironmentBootstrap } from "../init/aiox-bootstrap";
+import { runEnvironmentBootstrap } from "../init/aiox-bootstrap.js";
 
 /**
  * Registers the AIOX integration commands

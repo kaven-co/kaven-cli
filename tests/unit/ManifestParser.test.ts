@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { ManifestParser } from "../../src/core/ManifestParser";
+import { ManifestParser } from "../../src/core/ManifestParser.js";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";

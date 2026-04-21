@@ -1,7 +1,7 @@
 import {
   MarkerDetectionResult,
   createMarker,
-} from "../types/markers";
+} from "../types/markers.js";
 
 export class MarkerService {
   hasModule(fileContent: string, moduleName: string): boolean {

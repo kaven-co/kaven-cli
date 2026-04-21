@@ -6,9 +6,9 @@ import {
   ProjectInitializer,
   InitOptions,
   InitPromptAnswers,
-} from "../../core/ProjectInitializer";
-import { configManager } from "../../core/ConfigManager";
-import { runEnvironmentBootstrap } from "./aiox-bootstrap";
+} from "../../core/ProjectInitializer.js";
+import { configManager } from "../../core/ConfigManager.js";
+import { runEnvironmentBootstrap } from "./aiox-bootstrap.js";
 
 async function promptAnswers(projectName: string): Promise<InitPromptAnswers> {
   // Dynamic import to keep startup fast and avoid issues if not installed

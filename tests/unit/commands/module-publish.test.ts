@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { moduleJsonSchema, ModuleJson } from "../../../src/commands/module/publish";
+import { moduleJsonSchema, ModuleJson } from "../../../src/commands/module/publish.js";
 
 describe("module publish", () => {
   let testDir: string;

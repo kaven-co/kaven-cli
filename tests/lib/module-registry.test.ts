@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MODULE_REGISTRY } from "../../src/lib/module-registry";
+import { MODULE_REGISTRY } from "../../src/lib/module-registry.js";
 
 describe("C3.4 — module-registry", () => {
 

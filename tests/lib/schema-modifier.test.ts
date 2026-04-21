@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { activateModels, deactivateModels, isModuleActive } from "../../src/lib/schema-modifier";
+import { activateModels, deactivateModels, isModuleActive } from "../../src/lib/schema-modifier.js";
 
 describe("C3.3 — Schema Modifier Logic", () => {
   const mockSchema = `

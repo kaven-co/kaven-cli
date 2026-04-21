@@ -32,7 +32,7 @@ vi.mock("@inquirer/prompts", () => ({
 }));
 
 import { confirm } from "@inquirer/prompts";
-import { moduleActivate, moduleDeactivate, moduleListActivation } from "../../../src/commands/module/activate";
+import { moduleActivate, moduleDeactivate, moduleListActivation } from "../../../src/commands/module/activate.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 

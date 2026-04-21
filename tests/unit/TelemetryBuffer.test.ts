@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import { TelemetryBuffer } from "../../src/infrastructure/TelemetryBuffer";
+import { TelemetryBuffer } from "../../src/infrastructure/TelemetryBuffer.js";
 
 describe("TelemetryBuffer", () => {
   const logPath = path.join(os.homedir(), ".kaven", "telemetry.log");

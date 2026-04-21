@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import ora from "ora";
 import Table from "cli-table3";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
-import { AuthService } from "../../core/AuthService";
-import { NetworkError } from "../../infrastructure/errors";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { AuthService } from "../../core/AuthService.js";
+import { NetworkError } from "../../infrastructure/errors.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
 
 
 export interface MarketplaceListOptions {

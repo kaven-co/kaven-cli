@@ -43,9 +43,9 @@ vi.mock("../../../../src/core/AuthService", () => ({
 }));
 
 // Import AFTER mocks
-import { marketplaceList } from "../../../../src/commands/marketplace/list";
-import { NetworkError } from "../../../../src/infrastructure/errors";
-import type { PaginatedResponse, Module } from "../../../../src/types/marketplace";
+import { marketplaceList } from "../../../../src/commands/marketplace/list.js";
+import { NetworkError } from "../../../../src/infrastructure/errors.js";
+import type { PaginatedResponse, Module } from "../../../../src/types/marketplace.js";
 
 // ──────────────────────────────────────────────────────────────
 // Helpers

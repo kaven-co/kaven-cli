@@ -4,20 +4,21 @@ import fs from "fs-extra";
 import path from "path";
 import os from "os";
 import * as tar from "tar";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
-import { AuthService } from "../../core/AuthService";
-import { ModuleInstaller } from "../../core/ModuleInstaller";
-import { MarkerService } from "../../core/MarkerService";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { AuthService } from "../../core/AuthService.js";
+import { ModuleInstaller } from "../../core/ModuleInstaller.js";
+import { MarkerService } from "../../core/MarkerService.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
 import {
   AuthenticationError,
   LicenseRequiredError,
   NotFoundError,
   NetworkError,
   SignatureVerificationError,
-} from "../../infrastructure/errors";
-import { verifyDownload } from "../../core/SignatureVerifier";
-import type { ModuleManifest } from "../../core/ModuleInstaller";
+  ensureError,
+} from "../../infrastructure/errors.js";
+import { verifyDownload } from "../../core/SignatureVerifier.js";
+import type { ModuleManifest } from "../../core/ModuleInstaller.js";
 
 export interface MarketplaceInstallOptions {
   version?: string;
@@ -243,7 +244,8 @@ export async function marketplaceInstall(
       Date.now() - startTime
     );
     await telemetry.flush();
-  } catch (error) {
+  } catch (err: unknown) {
+    const error = ensureError(err);
     spinner.stop();
 
     if (error instanceof SignatureVerificationError) {
@@ -284,8 +286,7 @@ export async function marketplaceInstall(
 
     if (
       error instanceof AuthenticationError ||
-      (error instanceof Error &&
-        error.message.includes("Not authenticated"))
+      error.message.includes("Not authenticated")
     ) {
       console.error(
         chalk.red("Authentication required. Run: kaven auth login")
@@ -316,7 +317,7 @@ export async function marketplaceInstall(
 
     telemetry.capture(
       "cli.marketplace.install.error",
-      { slug, error: (error as Error).message },
+      { slug, error: error.message },
       Date.now() - startTime
     );
     await telemetry.flush();

@@ -56,3 +56,16 @@ export class SignatureVerificationError extends MarketplaceError {
     this.name = "SignatureVerificationError";
   }
 }
+
+/**
+ * Ensures an unknown error is a proper Error object.
+ */
+export function ensureError(error: unknown): Error {
+  if (error instanceof Error) return error;
+  if (typeof error === "string") return new Error(error);
+  try {
+    return new Error(JSON.stringify(error));
+  } catch {
+    return new Error(String(error));
+  }
+}

@@ -4,9 +4,9 @@ import open from "open";
 import path from "path";
 import fs from "fs-extra";
 import os from "os";
-import { AuthService } from "../../core/AuthService";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
-import { upgradeCheck, upgradeInstall } from "./check";
+import { AuthService } from "../../core/AuthService.js";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { upgradeCheck, upgradeInstall } from "./check.js";
 
 export interface UpgradeOptions {
   browser?: boolean;

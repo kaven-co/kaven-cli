@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { configManager, type KavenConfig } from "../../core/ConfigManager";
+import { configManager, type KavenConfig } from "../../core/ConfigManager.js";
 
 export interface ConfigOptions {
   json?: boolean;

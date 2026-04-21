@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import ora, { Ora } from "ora";
 import open from "open";
-import { AuthService } from "../../core/AuthService";
-import { MarketplaceClient } from "../../infrastructure/MarketplaceClient";
-import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer";
-import { AuthTokens } from "../../types/auth";
+import { AuthService } from "../../core/AuthService.js";
+import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { TelemetryBuffer } from "../../infrastructure/TelemetryBuffer.js";
+import { AuthTokens } from "../../types/auth.js";
 
 /**
  * Sleep helper for polling delays
