@@ -1,9 +1,11 @@
 import chalk from "chalk";
-import ora from "ora";
+import oraModule from "ora";
+export const ui = { ora: oraModule };
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import * as tar from "tar";
+import * as tarModule from "tar";
+export const tar = { x: tarModule.x };
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
 import { AuthService } from "../../core/AuthService.js";
 import { ModuleInstaller } from "../../core/ModuleInstaller.js";
@@ -72,7 +74,7 @@ export async function marketplaceInstall(
   }
   void accessToken; // used implicitly via authService in client
 
-  const spinner = ora(`Preparing installation of '${slug}'...`).start();
+  const spinner = ui.ora(`Preparing installation of '${slug}'...`).start();
   let tempDir: string | null = null;
 
   try {

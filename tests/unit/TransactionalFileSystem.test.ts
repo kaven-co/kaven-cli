@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { TransactionalFileSystem } from "../../src/infrastructure/TransactionalFileSystem.js";
 import fs from "fs-extra";
-import path from "path";
 import os from "os";
 
 describe("TransactionalFileSystem", () => {
@@ -31,8 +35,8 @@ describe("TransactionalFileSystem", () => {
       "test.txt",
     );
 
-    expect(await fs.pathExists(backupPath)).toBe(true);
-    expect(await fs.readFile(backupPath, "utf-8")).toBe("original content");
+    assert.strictEqual(await fs.pathExists(backupPath), true);
+    assert.strictEqual(await fs.readFile(backupPath, "utf-8"), "original content");
   });
 
   it("should rollback changes", async () => {
@@ -43,7 +47,7 @@ describe("TransactionalFileSystem", () => {
     await fs.writeFile(testFile, "modified");
 
     await tx.rollback();
-    expect(await fs.readFile(testFile, "utf-8")).toBe("original");
+    assert.strictEqual(await fs.readFile(testFile, "utf-8"), "original");
   });
 
   it("should commit and remove backup", async () => {
@@ -54,7 +58,7 @@ describe("TransactionalFileSystem", () => {
     const backupPath = path.join(testDir, ".agent/backups", tx.getBackupId());
 
     await tx.commit();
-    expect(await fs.pathExists(backupPath)).toBe(false);
+    assert.strictEqual(await fs.pathExists(backupPath), false);
   });
 
   it("should handle nested files", async () => {
@@ -66,12 +70,12 @@ describe("TransactionalFileSystem", () => {
     await fs.writeFile(nestedFile, "modified code");
     await tx.rollback();
 
-    expect(await fs.readFile(nestedFile, "utf-8")).toBe("code");
+    assert.strictEqual(await fs.readFile(nestedFile, "utf-8"), "code");
   });
 
   it("should throw if backing up non-existent file", async () => {
-    await expect(tx.backup(["nonexistent.txt"])).rejects.toThrow(
-      "File not found",
-    );
+    await assert.rejects(async () => { await tx.backup(["nonexistent.txt"]); }, { message: 
+      "File not found for backup: nonexistent.txt",
+     });
   });
 });

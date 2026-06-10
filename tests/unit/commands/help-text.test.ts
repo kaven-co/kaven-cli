@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { Command } from "commander";
 
 /**
@@ -58,28 +63,28 @@ describe("CLI help text", () => {
   });
 
   it("root program has a description", () => {
-    expect(program.description()).toBeTruthy();
-    expect(program.description()).toMatch(/kaven/i);
+    assert.ok(program.description());
+    assert.match(program.description() || "", /kaven/i);
   });
 
   it("all top-level commands have descriptions", () => {
     const topLevelCommands = program.commands;
     for (const cmd of topLevelCommands) {
-      expect(
+      assert.ok(
         cmd.description(),
         `Command '${cmd.name()}' should have a description`
-      ).toBeTruthy();
+      );
     }
   });
 
   it("module subcommands have descriptions", () => {
     const moduleCmd = program.commands.find((c) => c.name() === "module");
-    expect(moduleCmd).toBeDefined();
+    assert.ok(moduleCmd !== undefined);
     for (const sub of moduleCmd!.commands) {
-      expect(
+      assert.ok(
         sub.description(),
         `Subcommand 'module ${sub.name()}' should have a description`
-      ).toBeTruthy();
+      );
     }
   });
 
@@ -87,23 +92,22 @@ describe("CLI help text", () => {
     const marketplaceCmd = program.commands.find(
       (c) => c.name() === "marketplace"
     );
-    expect(marketplaceCmd).toBeDefined();
+    assert.ok(marketplaceCmd !== undefined);
     const subNames = marketplaceCmd!.commands.map((c) => c.name());
-    expect(subNames).toContain("browse");
-    expect(subNames).toContain("list");
-    expect(subNames).toContain("install");
+    assert.ok(subNames.includes("browse"));
+    assert.ok(subNames.includes("list"));
+    assert.ok(subNames.includes("install"));
   });
 
   it("init command has all expected options", () => {
     const initCmd = program.commands.find((c) => c.name() === "init");
-    expect(initCmd).toBeDefined();
+    assert.ok(initCmd !== undefined);
     const optionNames = initCmd!.options.map((o) => o.long);
-    expect(optionNames).toContain("--defaults");
-    expect(optionNames).toContain("--skip-install");
-    expect(optionNames).toContain("--skip-git");
-    expect(optionNames).toContain("--force");
+    assert.ok(optionNames.includes("--defaults"));
+    assert.ok(optionNames.includes("--skip-install"));
+    assert.ok(optionNames.includes("--skip-git"));
+    assert.ok(optionNames.includes("--force"));
   });
 });
 
 // Need to import beforeEach since we're using it
-import { beforeEach } from "vitest";

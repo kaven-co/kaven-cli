@@ -1,7 +1,10 @@
 import chalk from "chalk";
 import ora from "ora";
 import path from "node:path";
-import { confirm } from "@inquirer/prompts";
+import * as promptsModule from "@inquirer/prompts";
+export const prompts = { 
+  confirm: promptsModule.confirm 
+};
 import {
   SchemaActivator,
   KAVEN_MODULES,
@@ -140,7 +143,7 @@ export async function moduleActivate(
 
     // 5. Confirm if not --yes
     if (!options.yes) {
-      const ok = await confirm({
+      const ok = await prompts.confirm({
         message: `Activate module "${def.label}"? This will uncomment ${def.models.length} model(s) in the schema.`,
         default: true,
       });

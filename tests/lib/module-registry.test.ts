@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { MODULE_REGISTRY } from "../../src/lib/module-registry.js";
 
 describe("C3.4 — module-registry", () => {
@@ -7,10 +12,10 @@ describe("C3.4 — module-registry", () => {
 
   it("MODULE_REGISTRY contém billing com campos corretos", () => {
     const billing = MODULE_REGISTRY.find(m => m.id === "billing");
-    expect(billing).toBeDefined();
-    expect(billing!.name).toBeTruthy();
-    expect(billing!.models).toContain("Invoice");
-    expect(billing!.dependsOn).toContain("core");
+    assert.ok(billing !== undefined);
+    assert.ok(billing!.name);
+    assert.ok(billing!.models.includes("Invoice"));
+    assert.ok(billing!.dependsOn.includes("core"));
   });
 
   // ── 2. resolveDependencies('billing') — dependências da billing ───────────
@@ -18,14 +23,14 @@ describe("C3.4 — module-registry", () => {
   it("billing depende de core e core existe no registry", () => {
     const billing = MODULE_REGISTRY.find(m => m.id === "billing")!;
     const deps = billing.dependsOn.map(depId => MODULE_REGISTRY.find(m => m.id === depId));
-    expect(deps.every(d => d !== undefined)).toBe(true);
+    assert.strictEqual(deps.every(d => d !== undefined), true);
   });
 
   // ── 3. Módulo inexistente retorna undefined ───────────────────────────────
 
   it("find por id inexistente retorna undefined", () => {
     const result = MODULE_REGISTRY.find(m => m.id === "nonexistent-module-xyz");
-    expect(result).toBeUndefined();
+    assert.strictEqual(result, undefined);
   });
 
   // ── 4. Dependências circulares não causam loop infinito ──────────────────
@@ -50,7 +55,7 @@ describe("C3.4 — module-registry", () => {
     }
 
     for (const mod of MODULE_REGISTRY) {
-      expect(hasCycle(mod.id)).toBe(false);
+      assert.strictEqual(hasCycle(mod.id), false);
     }
   });
 
@@ -58,12 +63,12 @@ describe("C3.4 — module-registry", () => {
 
   it("todos os módulos têm id, name, description, models e dependsOn válidos", () => {
     for (const mod of MODULE_REGISTRY) {
-      expect(mod.id).toBeTruthy();
-      expect(mod.name).toBeTruthy();
-      expect(mod.description).toBeTruthy();
-      expect(Array.isArray(mod.models)).toBe(true);
-      expect(mod.models.length).toBeGreaterThan(0);
-      expect(Array.isArray(mod.dependsOn)).toBe(true);
+      assert.ok(mod.id);
+      assert.ok(mod.name);
+      assert.ok(mod.description);
+      assert.strictEqual(Array.isArray(mod.models), true);
+      assert.ok(mod.models.length > 0);
+      assert.strictEqual(Array.isArray(mod.dependsOn), true);
     }
   });
 
@@ -73,7 +78,7 @@ describe("C3.4 — module-registry", () => {
     const ids = new Set(MODULE_REGISTRY.map(m => m.id));
     for (const mod of MODULE_REGISTRY) {
       for (const depId of mod.dependsOn) {
-        expect(ids.has(depId), `${mod.id} depende de ${depId} que não existe`).toBe(true);
+        assert.strictEqual(ids.has(depId), true, `${mod.id} depende de ${depId} que não existe`);
       }
     }
   });
@@ -82,7 +87,7 @@ describe("C3.4 — module-registry", () => {
 
   it("core module não depende de nenhum outro módulo", () => {
     const core = MODULE_REGISTRY.find(m => m.id === "core")!;
-    expect(core).toBeDefined();
-    expect(core.dependsOn).toHaveLength(0);
+    assert.ok(core !== undefined);
+    assert.strictEqual(core.dependsOn.length, 0);
   });
 });

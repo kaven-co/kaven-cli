@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ModuleInstaller, ModuleManifest } from "../../src/core/ModuleInstaller.js";
 import { MarkerService } from "../../src/core/MarkerService.js";
 import fs from "fs-extra";
@@ -48,8 +53,8 @@ app.listen(3000);
     await installer.install(manifest);
 
     const content = await fs.readFile(path.join(testDir, "app.ts"), "utf-8");
-    expect(content).toContain("KAVEN_MODULE:payments");
-    expect(content).toContain("paymentsRouter");
+    assert.ok(content.includes("KAVEN_MODULE:payments"));
+    assert.ok(content.includes("paymentsRouter"));
   });
 
   it("should rollback on injection failure", async () => {
@@ -69,9 +74,9 @@ app.listen(3000);
       ],
     };
 
-    await expect(installer.install(manifest)).rejects.toThrow();
+    await assert.rejects(async () => { await installer.install(manifest); }, { message: /anchor not found/i });
 
     const content = await fs.readFile(filePath, "utf-8");
-    expect(content).toBe(originalContent);
+    assert.strictEqual(content, originalContent);
   });
 });

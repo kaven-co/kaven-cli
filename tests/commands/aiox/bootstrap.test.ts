@@ -1,48 +1,60 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runEnvironmentBootstrap } from "../../../src/commands/init/aiox-bootstrap.js";
-import * as fs from "node:fs";
-import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
+import { runEnvironmentBootstrap, child_process, ui } from "../../../src/commands/init/aiox-bootstrap.js";
+import fs from "fs-extra";
 
-vi.mock("node:fs");
-vi.mock("node:child_process");
-vi.mock("ora", () => ({
-  default: vi.fn(() => ({
-    start: vi.fn().mockReturnThis(),
-    succeed: vi.fn().mockReturnThis(),
-    warn: vi.fn().mockReturnThis(),
-  })),
-}));
+
 
 describe("C3.1 — AIOX Bootstrap", () => {
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  const mockSpinner = {
+    start: mock.fn(() => mockSpinner),
+    stop: mock.fn(() => mockSpinner),
+    fail: mock.fn(() => mockSpinner),
+    succeed: mock.fn(() => mockSpinner),
+    warn: mock.fn(() => mockSpinner),
+    text: "",
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.method(ui, "ora", () => mockSpinner);
   });
 
   it("should skip bootstrap when .aiox-core is not present", async () => {
-    (fs.existsSync as any).mockReturnValue(false);
+    mock.method(fs, 'existsSync', () => false);
+    const execSyncMock = mock.method(child_process, 'execSync', () => Buffer.from(''));
     await runEnvironmentBootstrap("/project", {});
-    expect(execSync).not.toHaveBeenCalled();
+    assert.strictEqual(execSyncMock.mock.calls.length, 0);
   });
 
   it("should call environment-bootstrap when .aiox-core is present", async () => {
-    (fs.existsSync as any).mockReturnValue(true);
+    mock.method(fs, 'existsSync', () => true);
+    const execSyncMock = mock.method(child_process, 'execSync', () => Buffer.from(''));
     await runEnvironmentBootstrap("/project", {});
-    expect(execSync).toHaveBeenCalledWith(
-      expect.stringContaining("devops environment-bootstrap"),
-      expect.objectContaining({ cwd: "/project" })
-    );
+    assert.ok(execSyncMock.mock.calls.some(call => call.arguments[0].includes("devops environment-bootstrap") && call.arguments[1].cwd === "/project"));
   });
 
   it("should respect --skip-aiox flag", async () => {
+    const existsSyncMock = mock.method(fs, 'existsSync', () => true);
+    const execSyncMock = mock.method(child_process, 'execSync', () => Buffer.from(''));
     await runEnvironmentBootstrap("/project", { skipAiox: true });
-    expect(fs.existsSync).not.toHaveBeenCalled();
+    assert.strictEqual(existsSyncMock.mock.calls.length, 0);
   });
 
   it("should warn but not throw when execSync fails", async () => {
-    (fs.existsSync as any).mockReturnValue(true);
-    (execSync as any).mockImplementationOnce(() => {
+    mock.method(fs, 'existsSync', () => true);
+    mock.method(child_process, 'execSync', () => {
       throw new Error("Bootstrap failed");
     });
-    await expect(runEnvironmentBootstrap("/project", {})).resolves.toBeUndefined();
+    
+    // Should NOT throw
+    await runEnvironmentBootstrap("/project", {});
   });
 });

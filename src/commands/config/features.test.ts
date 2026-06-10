@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import path from "node:path";
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
 import { configFeatures } from "./features.js";
 import { ALL_CAPABILITIES } from "../../lib/capabilities-catalog.js";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";
 
@@ -20,18 +22,18 @@ describe("GAP-3: Config Features Command (Refactored)", () => {
   describe("ALL_CAPABILITIES catalog", () => {
     it("should contain all mandatory categories from spec", () => {
       const categories = new Set(ALL_CAPABILITIES.map((c) => c.category));
-      expect(categories).toContain("Auth");
-      expect(categories).toContain("Tenancy");
-      expect(categories).toContain("Billing");
-      expect(categories).toContain("API");
-      expect(categories).toContain("Limits");
-      expect(categories).toContain("Support");
+      assert.ok(categories.has("Auth"));
+      assert.ok(categories.has("Tenancy"));
+      assert.ok(categories.has("Billing"));
+      assert.ok(categories.has("API"));
+      assert.ok(categories.has("Limits"));
+      assert.ok(categories.has("Support"));
     });
 
     it("should have unique keys", () => {
       const keys = ALL_CAPABILITIES.map((c) => c.key);
       const unique = new Set(keys);
-      expect(unique.size).toBe(keys.length);
+      assert.strictEqual(unique.size, keys.length);
     });
   });
 
@@ -40,11 +42,11 @@ describe("GAP-3: Config Features Command (Refactored)", () => {
       const outputPath = path.join(tempDir, "capabilities.seed.ts");
       await configFeatures({ tier: "starter", outputPath });
       
-      expect(fs.existsSync(outputPath)).toBe(true);
+      assert.strictEqual(fs.existsSync(outputPath), true);
       const content = await fs.readFile(outputPath, "utf-8");
-      expect(content).toContain("Tier: starter");
-      expect(content).toContain("FEATURE_EMAIL_VERIFICATION");
-      expect(content).toContain("MAX_TEAM_MEMBERS");
+      assert.ok(content.includes("Tier: starter"));
+      assert.ok(content.includes("FEATURE_EMAIL_VERIFICATION"));
+      assert.ok(content.includes("MAX_TEAM_MEMBERS"));
     });
 
     it("should generate a valid seed file for tier=enterprise", async () => {
@@ -52,21 +54,21 @@ describe("GAP-3: Config Features Command (Refactored)", () => {
       await configFeatures({ tier: "enterprise", outputPath });
       
       const content = await fs.readFile(outputPath, "utf-8");
-      expect(content).toContain("Tier: enterprise");
-      expect(content).toContain("defaultValue: \"-1\"");
+      assert.ok(content.includes("Tier: enterprise"));
+      assert.ok(content.includes("defaultValue: \"-1\""));
     });
   });
 
   describe("--list flag", () => {
     it("should print the catalog without writing files", async () => {
       const outputPath = path.join(tempDir, "should-not-exist.ts");
-      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const logSpy = mock.method(console, "log", () => {});
       
       await configFeatures({ list: true, outputPath });
       
-      expect(fs.existsSync(outputPath)).toBe(false);
-      expect(logSpy).toHaveBeenCalled();
-      logSpy.mockRestore();
+      assert.strictEqual(fs.existsSync(outputPath), false);
+      assert.ok(logSpy.mock.calls.length > 0);
+      logSpy.mock.restore();
     });
   });
 });

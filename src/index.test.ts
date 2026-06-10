@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { main } from './index.js';
 
 describe('CLI Entry Point', () => {
   it('should be defined', () => {
-    expect(main).toBeDefined();
-    // In a real test we would spy on console.log or test arg parsing
+    assert.ok(main !== undefined, 'main should be defined');
   });
 });

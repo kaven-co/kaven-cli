@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
@@ -67,7 +72,7 @@ describe("AuthService", () => {
   });
 
   afterEach(async () => {
-    vi.restoreAllMocks();
+
     if (await fs.pathExists(configPath)) {
       await fs.remove(configPath);
     }
@@ -82,7 +87,7 @@ describe("AuthService", () => {
       await authService.storeToken(token);
 
       const retrieved = await authService.getToken();
-      expect(retrieved).toBe(token);
+      assert.strictEqual(retrieved, token);
     });
 
     it("should clear the token on logout (clearToken)", async () => {
@@ -90,12 +95,12 @@ describe("AuthService", () => {
       await authService.clearToken();
 
       const retrieved = await authService.getToken();
-      expect(retrieved).toBeNull();
+      assert.strictEqual(retrieved, null);
     });
 
     it("should return false if no token is stored", async () => {
       const isAuth = await authService.isAuthenticated();
-      expect(isAuth).toBe(false);
+      assert.strictEqual(isAuth, false);
     });
 
     it("should set 0600 permissions on auth.json (Unix only)", async () => {
@@ -104,7 +109,7 @@ describe("AuthService", () => {
       await authService.storeToken("secure-token");
       const stats = await fs.stat(configPath);
 
-      expect(stats.mode & 0o777).toBe(0o600);
+      assert.strictEqual(stats.mode & 0o777, 0o600);
     });
   });
 
@@ -117,14 +122,14 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const retrieved = await authService.getAuth();
-      expect(retrieved).not.toBeNull();
-      expect(retrieved?.access_token).toBe(tokens.access_token);
-      expect(retrieved?.user.email).toBe("dev@example.com");
+      assert.notStrictEqual(retrieved, null);
+      assert.strictEqual(retrieved?.access_token, tokens.access_token);
+      assert.strictEqual(retrieved?.user.email, "dev@example.com");
     });
 
     it("should return null when no auth file exists", async () => {
       const result = await authService.getAuth();
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it("should set 0600 permissions on auth.json for saveTokens (Unix only)", async () => {
@@ -134,7 +139,7 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const stats = await fs.stat(configPath);
-      expect(stats.mode & 0o777).toBe(0o600);
+      assert.strictEqual(stats.mode & 0o777, 0o600);
     });
   });
 
@@ -147,12 +152,12 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const result = await authService.isAuthenticated();
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     it("should return false when no tokens are stored", async () => {
       const result = await authService.isAuthenticated();
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
 
     it("should never throw", async () => {
@@ -161,7 +166,7 @@ describe("AuthService", () => {
       await fs.writeFile(configPath, "not-valid-json");
 
       const result = await authService.isAuthenticated();
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
   });
 
@@ -175,11 +180,11 @@ describe("AuthService", () => {
 
       await authService.logout();
 
-      expect(await fs.pathExists(configPath)).toBe(false);
+      assert.strictEqual(await fs.pathExists(configPath), false);
     });
 
     it("should not throw when already logged out", async () => {
-      await expect(authService.logout()).resolves.not.toThrow();
+      await assert.doesNotReject(async () => { await authService.logout(); });
     });
   });
 
@@ -192,14 +197,14 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const info = await authService.getUserInfo();
-      expect(info).not.toBeNull();
-      expect(info?.email).toBe("dev@example.com");
-      expect(info?.id).toBe("user_123"); // from JWT sub claim
+      assert.notStrictEqual(info, null);
+      assert.strictEqual(info?.email, "dev@example.com");
+      assert.strictEqual(info?.id, "user_123"); // from JWT sub claim
     });
 
     it("should return null when not authenticated", async () => {
       const info = await authService.getUserInfo();
-      expect(info).toBeNull();
+      assert.strictEqual(info, null);
     });
 
     it("should fall back to stored user data for non-JWT token", async () => {
@@ -217,7 +222,7 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const info = await authService.getUserInfo();
-      expect(info?.email).toBe("fallback@example.com");
+      assert.strictEqual(info?.email, "fallback@example.com");
     });
   });
 
@@ -230,16 +235,16 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const info = await authService.getWhoamiInfo();
-      expect(info).not.toBeNull();
-      expect(info?.email).toBe("dev@example.com");
-      expect(info?.githubId).toBe("octocat");
-      expect(info?.tier).toBe("Complete"); // capitalized
-      expect(info?.sessionExpiry).toContain("expires in");
+      assert.notStrictEqual(info, null);
+      assert.strictEqual(info?.email, "dev@example.com");
+      assert.strictEqual(info?.githubId, "octocat");
+      assert.strictEqual(info?.tier, "Complete"); // capitalized
+      assert.ok(info?.sessionExpiry.includes("expires in"));
     });
 
     it("should return null when not authenticated", async () => {
       const info = await authService.getWhoamiInfo();
-      expect(info).toBeNull();
+      assert.strictEqual(info, null);
     });
 
     it("should show 'expired' for past expiry dates", async () => {
@@ -247,7 +252,7 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const info = await authService.getWhoamiInfo();
-      expect(info?.sessionExpiry).toBe("expired");
+      assert.strictEqual(info?.sessionExpiry, "expired");
     });
   });
 
@@ -260,13 +265,11 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const token = await authService.getValidToken();
-      expect(token).toBe(tokens.access_token);
+      assert.strictEqual(token, tokens.access_token);
     });
 
     it("should throw when not authenticated", async () => {
-      await expect(authService.getValidToken()).rejects.toThrow(
-        "Not authenticated"
-      );
+      await assert.rejects(async () => { await authService.getValidToken(); }, { message: /Not authenticated/i });
     });
 
     it("should throw 'Session expired' when token is expired and refresh fails", async () => {
@@ -274,18 +277,7 @@ describe("AuthService", () => {
       const tokens = buildAuthTokens(-10 * 60 * 1000);
       await authService.saveTokens(tokens);
 
-      // Mock the dynamic import to fail
-      vi.mock("../../src/infrastructure/MarketplaceClient", () => ({
-        MarketplaceClient: class {
-          async refreshToken() {
-            throw new Error("Refresh failed");
-          }
-        },
-      }));
-
-      await expect(authService.getValidToken()).rejects.toThrow(
-        "Session expired"
-      );
+      await assert.rejects(async () => { await authService.getValidToken(); }, { message: /Session expired/i });
     });
 
     it("should warn and use existing token when expiring soon but refresh fails (token still valid)", async () => {
@@ -293,22 +285,13 @@ describe("AuthService", () => {
       const tokens = buildAuthTokens(3 * 60 * 1000);
       await authService.saveTokens(tokens);
 
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      // Mock the dynamic import to fail
-      vi.mock("../../src/infrastructure/MarketplaceClient", () => ({
-        MarketplaceClient: class {
-          async refreshToken() {
-            throw new Error("Refresh failed");
-          }
-        },
-      }));
+      const warnSpy = mock.method(console, "warn", () => {});
 
       const token = await authService.getValidToken();
       // Should still return the token (token is still valid, just expiring soon)
-      expect(token).toBe(tokens.access_token);
+      assert.strictEqual(token, tokens.access_token);
 
-      warnSpy.mockRestore();
+      warnSpy.mock.restore();
     });
   });
 
@@ -321,11 +304,11 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const payload = await authService.getDecodedToken();
-      expect(payload).not.toBeNull();
-      expect(payload?.email).toBe("dev@example.com");
-      expect(payload?.githubId).toBe("octocat");
-      expect(payload?.tier).toBe("complete");
-      expect(payload?.sub).toBe("user_123");
+      assert.notStrictEqual(payload, null);
+      assert.strictEqual(payload?.email, "dev@example.com");
+      assert.strictEqual(payload?.githubId, "octocat");
+      assert.strictEqual(payload?.tier, "complete");
+      assert.strictEqual(payload?.sub, "user_123");
     });
 
     it("should return null for non-JWT tokens", async () => {
@@ -338,7 +321,7 @@ describe("AuthService", () => {
       await authService.saveTokens(tokens);
 
       const payload = await authService.getDecodedToken();
-      expect(payload).toBeNull();
+      assert.strictEqual(payload, null);
     });
   });
 });

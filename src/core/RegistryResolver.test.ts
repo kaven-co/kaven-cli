@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import path from "node:path";
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
@@ -25,7 +27,7 @@ describe("C2.5: Remote Registry Support", () => {
     const resolver = new RegistryResolver();
     const registry = await resolver.getActiveRegistry();
 
-    expect(registry).toBe("https://marketplace.kaven.site");
+    assert.strictEqual(registry, "https://marketplace.kaven.site");
   });
 
   it("C2.5.2: Should validate registry URL format", async () => {
@@ -35,7 +37,7 @@ describe("C2.5: Remote Registry Support", () => {
       await resolver.setCustomRegistry("not-a-url");
       expect.fail("Should reject invalid URL");
     } catch (error) {
-      expect((error as Error).message).toContain("Invalid URL");
+      assert.ok((error as Error).message.includes("Invalid URL"));
     }
   });
 
@@ -43,9 +45,9 @@ describe("C2.5: Remote Registry Support", () => {
     const resolver = new RegistryResolver();
     const registries = await resolver.listRegistries();
 
-    expect(registries).toHaveProperty("default");
-    expect(registries).toHaveProperty("active");
-    expect(registries.default).toBe("https://marketplace.kaven.site");
+    assert.ok("default" in registries);
+    assert.ok("active" in registries);
+    assert.strictEqual(registries.default, "https://marketplace.kaven.site");
   });
 
   it("C2.5.4: Should reset to default registry", async () => {
@@ -56,7 +58,7 @@ describe("C2.5: Remote Registry Support", () => {
     await resolver.resetToDefaultRegistry();
 
     const registries = await resolver.listRegistries();
-    expect(registries.custom).toBeUndefined();
-    expect(registries.active).toBe("https://marketplace.kaven.site");
+    assert.strictEqual(registries.custom, undefined);
+    assert.strictEqual(registries.active, "https://marketplace.kaven.site");
   });
 });

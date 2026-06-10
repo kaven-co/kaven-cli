@@ -1,63 +1,63 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
 import { LicenseService } from '../../src/core/LicenseService.js';
-import fs from 'fs/promises';
-
-vi.mock('fs/promises');
-vi.mock('../../src/infrastructure/MarketplaceClient.js', () => ({
-  MarketplaceClient: vi.fn().mockImplementation(() => ({
-    validateLicense: vi.fn().mockResolvedValue({ valid: true, tier: 'PRO', expiresAt: null }),
-    getLicenseStatus: vi.fn().mockResolvedValue({ key: 'KAVEN-PRO-ABCDEFGH-XY', tier: 'PRO', expiresAt: null, daysUntilExpiry: null }),
-  })),
-}));
+import fs from 'node:fs/promises';
 
 describe('LicenseService', () => {
   let service: LicenseService;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     service = new LicenseService();
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
   });
 
   describe('isValidFormat', () => {
     it('accepts valid PRO key', () => {
-      expect(service.isValidFormat('KAVEN-PRO-ABCDEFGH-XY')).toBe(true);
+      assert.strictEqual(service.isValidFormat('KAVEN-PRO-ABCDEFGH-XY'), true);
     });
     it('accepts valid STARTER key', () => {
-      expect(service.isValidFormat('KAVEN-STARTER-12345678-AB')).toBe(true);
+      assert.strictEqual(service.isValidFormat('KAVEN-STARTER-12345678-AB'), true);
     });
     it('rejects wrong prefix', () => {
-      expect(service.isValidFormat('INVALID-PRO-ABCDEFGH-XY')).toBe(false);
+      assert.strictEqual(service.isValidFormat('INVALID-PRO-ABCDEFGH-XY'), false);
     });
     it('rejects wrong segment length', () => {
-      expect(service.isValidFormat('KAVEN-PRO-ABC-XY')).toBe(false);
+      assert.strictEqual(service.isValidFormat('KAVEN-PRO-ABC-XY'), false);
     });
   });
 
   describe('tierLevel', () => {
     it('returns correct order', () => {
-      expect(service.tierLevel('STARTER')).toBeLessThan(service.tierLevel('COMPLETE'));
-      expect(service.tierLevel('COMPLETE')).toBeLessThan(service.tierLevel('PRO'));
-      expect(service.tierLevel('PRO')).toBeLessThan(service.tierLevel('ENTERPRISE'));
+      assert.ok(service.tierLevel('STARTER') < service.tierLevel('COMPLETE'));
+      assert.ok(service.tierLevel('COMPLETE') < service.tierLevel('PRO'));
+      assert.ok(service.tierLevel('PRO') < service.tierLevel('ENTERPRISE'));
     });
   });
 
   describe('userHasRequiredTier', () => {
     it('returns true when tier matches', () => {
-      expect(service.userHasRequiredTier('PRO', 'PRO')).toBe(true);
+      assert.strictEqual(service.userHasRequiredTier('PRO', 'PRO'), true);
     });
     it('returns true when user has higher tier', () => {
-      expect(service.userHasRequiredTier('ENTERPRISE', 'PRO')).toBe(true);
+      assert.strictEqual(service.userHasRequiredTier('ENTERPRISE', 'PRO'), true);
     });
     it('returns false when tier insufficient', () => {
-      expect(service.userHasRequiredTier('STARTER', 'PRO')).toBe(false);
+      assert.strictEqual(service.userHasRequiredTier('STARTER', 'PRO'), false);
     });
   });
 
   describe('getCached', () => {
     it('returns null when no cache file', async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('ENOENT'));
+      mock.method(fs, 'readFile', () => Promise.reject(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })));
       const result = await service.getCached('KAVEN-PRO-ABCDEFGH-XY');
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('returns null when cache entry expired', async () => {
@@ -69,9 +69,9 @@ describe('LicenseService', () => {
           validatedAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
         },
       };
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(expired) as any);
+      mock.method(fs, 'readFile', () => Promise.resolve(JSON.stringify(expired)));
       const result = await service.getCached('KAVEN-PRO-ABCDEFGH-XY');
-      expect(result).toBeNull();
+      assert.strictEqual(result, null);
     });
 
     it('returns entry when cache valid', async () => {
@@ -83,10 +83,10 @@ describe('LicenseService', () => {
           validatedAt: Date.now() - 5 * 60 * 1000, // 5 minutes ago
         },
       };
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(valid) as any);
+      mock.method(fs, 'readFile', () => Promise.resolve(JSON.stringify(valid)));
       const result = await service.getCached('KAVEN-PRO-ABCDEFGH-XY');
-      expect(result).not.toBeNull();
-      expect(result?.tier).toBe('PRO');
+      assert.notStrictEqual(result, null);
+      assert.strictEqual(result?.tier, 'PRO');
     });
   });
 
@@ -100,15 +100,15 @@ describe('LicenseService', () => {
           validatedAt: Date.now(),
         },
       };
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(validCache) as any);
+      mock.method(fs, 'readFile', () => Promise.resolve(JSON.stringify(validCache)));
 
       const result = await service.validateLicense('KAVEN-PRO-ABCDEFGH-XY', 'PRO');
-      expect(result.source).toBe('cache');
+      assert.strictEqual(result.source, 'cache');
     });
 
     it('throws on invalid format when no cache', async () => {
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('ENOENT'));
-      await expect(service.validateLicense('INVALID-KEY', 'PRO')).rejects.toThrow('Invalid license key format');
+      mock.method(fs, 'readFile', () => Promise.reject(Object.assign(new Error('ENOENT'), { code: 'ENOENT' })));
+      await assert.rejects(async () => { await service.validateLicense('INVALID-KEY', 'PRO'); }, { message: 'Invalid license key format' });
     });
   });
 });

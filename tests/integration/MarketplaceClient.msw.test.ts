@@ -1,19 +1,24 @@
-import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { after, afterEach, before, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '../helpers/msw-server.js';
 import { MarketplaceClient } from '../../src/infrastructure/MarketplaceClient.js';
 import { AuthenticationError, RateLimitError, NotFoundError } from '../../src/infrastructure/errors.js';
 
-beforeAll(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
+before(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => mockServer.resetHandlers());
-afterAll(() => mockServer.close());
+after(() => mockServer.close());
 
 describe('MarketplaceClient (HTTP via MSW)', () => {
   it('fetches modules list successfully', async () => {
     const client = new MarketplaceClient();
     const result = await client.listModules();
-    expect(result.data).toHaveLength(2);
-    expect(result.data[0].slug).toBe('payments');
+    assert.strictEqual(result.data.length, 2);
+    assert.strictEqual(result.data[0].slug, 'payments');
   });
 
   it('throws AuthenticationError on 401', async () => {
@@ -23,7 +28,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
       )
     );
     const client = new MarketplaceClient();
-    await expect(client.listModules()).rejects.toBeInstanceOf(AuthenticationError);
+    await assert.rejects(async () => { await client.listModules(); }, AuthenticationError);
   });
 
   it('throws NotFoundError on 404', async () => {
@@ -33,7 +38,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
       )
     );
     const client = new MarketplaceClient();
-    await expect(client.getModule('nonexistent')).rejects.toBeInstanceOf(NotFoundError);
+    await assert.rejects(async () => { await client.getModule('nonexistent'); }, NotFoundError);
   });
 
   it('throws RateLimitError on 429', async () => {
@@ -43,7 +48,7 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
       )
     );
     const client = new MarketplaceClient();
-    await expect(client.listModules()).rejects.toBeInstanceOf(RateLimitError);
+    await assert.rejects(async () => { await client.listModules(); }, RateLimitError);
   });
 
   it('retries on 500 and succeeds', async () => {
@@ -59,14 +64,14 @@ describe('MarketplaceClient (HTTP via MSW)', () => {
     );
     const client = new MarketplaceClient();
     const result = await client.listModules();
-    expect(result.data).toHaveLength(0);
-    expect(callCount).toBeGreaterThanOrEqual(2);
+    assert.strictEqual(result.data.length, 0);
+    assert.ok(callCount >= 2);
   }, 30000);
 
   it('validates license via API', async () => {
     const client = new MarketplaceClient();
     const result = await client.validateLicense('KAVEN-COMPLETE-ABCD1234-XY', 'COMPLETE');
-    expect(result.valid).toBe(true);
-    expect(result.tier).toBe('COMPLETE');
+    assert.strictEqual(result.valid, true);
+    assert.strictEqual(result.tier, 'COMPLETE');
   });
 });

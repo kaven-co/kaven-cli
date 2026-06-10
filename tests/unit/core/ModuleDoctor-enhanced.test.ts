@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ModuleDoctor } from "../../../src/core/ModuleDoctor.js";
 import { MarkerService } from "../../../src/core/MarkerService.js";
 import { ManifestParser } from "../../../src/core/ManifestParser.js";
@@ -43,8 +48,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
     it("returns info result when base schema does not exist", async () => {
       const results = await doctor.checkSchemaMerge();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
-      expect(warnings[0].message).toMatch(/schema/i);
+      assert.ok(warnings.length >= 1);
+      assert.match(warnings[0].message, /schema/i);
     });
 
     it("detects merge conflicts in schema files", async () => {
@@ -61,8 +66,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkSchemaMerge();
       const errors = results.filter((r) => r.severity === "error");
-      expect(errors.length).toBeGreaterThanOrEqual(1);
-      expect(errors[0].message).toMatch(/conflict/i);
+      assert.ok(errors.length >= 1);
+      assert.match(errors[0].message, /conflict/i);
     });
 
     it("returns info result when schema is clean", async () => {
@@ -75,7 +80,7 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkSchemaMerge();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
+      assert.ok(infos.length >= 1);
     });
   });
 
@@ -89,8 +94,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkEnvCompleteness();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
-      expect(warnings[0].message).toMatch(/\.env/i);
+      assert.ok(warnings.length >= 1);
+      assert.match(warnings[0].message, /\.env/i);
     });
 
     it("detects missing env vars", async () => {
@@ -102,8 +107,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkEnvCompleteness();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
-      expect(warnings[0].message).toMatch(/JWT_SECRET|NEW_VAR/);
+      assert.ok(warnings.length >= 1);
+      assert.match(warnings[0].message, /JWT_SECRET|NEW_VAR/);
     });
 
     it("returns info when .env has all required keys", async () => {
@@ -118,14 +123,14 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkEnvCompleteness();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
+      assert.ok(infos.length >= 1);
     });
 
     it("returns info when .env.example does not exist", async () => {
       const results = await doctor.checkEnvCompleteness();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
-      expect(infos[0].message).toMatch(/\.env\.example/i);
+      assert.ok(infos.length >= 1);
+      assert.match(infos[0].message, /\.env\.example/i);
     });
   });
 
@@ -133,10 +138,10 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
   describe("checkLicense", () => {
     it("warns when license file does not exist", async () => {
       const results = await doctor.checkLicense();
-      expect(results.length).toBeGreaterThanOrEqual(1);
+      assert.ok(results.length >= 1);
       // Will be warning because license file doesn't exist in ~/.kaven
       // (we can't easily mock homedir here — just verify it returns results)
-      expect(results[0].severity).toMatch(/warning|info/);
+      assert.match(results[0].severity, /warning|info/);
     });
 
     it("returns info for valid non-expiring license", async () => {
@@ -146,13 +151,13 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       // Check that the expiry check logic works
       const expiresAt = new Date(licenseData.expiresAt).getTime();
-      expect(Date.now() < expiresAt).toBe(true);
+      assert.strictEqual(Date.now() < expiresAt, true);
     });
 
     it("would flag expired license as error", () => {
       const pastDate = new Date(Date.now() - 1000).toISOString();
       const expiresAt = new Date(pastDate).getTime();
-      expect(Date.now() > expiresAt).toBe(true);
+      assert.strictEqual(Date.now() > expiresAt, true);
     });
   });
 
@@ -166,7 +171,7 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkFrameworkVersion();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
+      assert.ok(infos.length >= 1);
     });
 
     it("returns info for compatible @kaven/core version", async () => {
@@ -177,8 +182,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkFrameworkVersion();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
-      expect(infos[0].message).toMatch(/OK|version/i);
+      assert.ok(infos.length >= 1);
+      assert.match(infos[0].message, /OK|version/i);
     });
 
     it("warns for outdated @kaven/core version", async () => {
@@ -189,7 +194,7 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkFrameworkVersion();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
+      assert.ok(warnings.length >= 1);
     });
   });
 
@@ -199,9 +204,9 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
       // testDir has no node_modules
       const results = await doctor.checkPrismaClientSync();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
-      expect(warnings[0].message).toMatch(/prisma/i);
-      expect(warnings[0].fixable).toBe(true);
+      assert.ok(warnings.length >= 1);
+      assert.match(warnings[0].message, /prisma/i);
+      assert.strictEqual(warnings[0].fixable, true);
     });
 
     it("returns info when prisma/schema.prisma does not exist", async () => {
@@ -210,7 +215,7 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkPrismaClientSync();
       const infos = results.filter((r) => r.severity === "info");
-      expect(infos.length).toBeGreaterThanOrEqual(1);
+      assert.ok(infos.length >= 1);
     });
 
     it("warns when schema is newer than generated client", async () => {
@@ -226,8 +231,8 @@ describe("ModuleDoctor — Enhanced Checks (C2.4)", () => {
 
       const results = await doctor.checkPrismaClientSync();
       const warnings = results.filter((r) => r.severity === "warning");
-      expect(warnings.length).toBeGreaterThanOrEqual(1);
-      expect(warnings[0].message).toMatch(/prisma generate/i);
+      assert.ok(warnings.length >= 1);
+      assert.match(warnings[0].message, /prisma generate/i);
     });
   });
 });

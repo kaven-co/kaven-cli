@@ -1,29 +1,34 @@
-import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { after, afterEach, before, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '../helpers/msw-server.js';
 import { MarketplaceClient } from '../../src/infrastructure/MarketplaceClient.js';
 
-beforeAll(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
+before(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => mockServer.resetHandlers());
-afterAll(() => mockServer.close());
+after(() => mockServer.close());
 
 describe('Auth Flow (MSW)', () => {
   it('requests device code successfully', async () => {
     const client = new MarketplaceClient();
     const result = await client.requestDeviceCode();
-    expect(result.device_code).toBe('test-device-code');
-    expect(result.user_code).toBe('TEST-1234');
-    expect(result.interval).toBe(5);
+    assert.strictEqual(result.device_code, 'test-device-code');
+    assert.strictEqual(result.user_code, 'TEST-1234');
+    assert.strictEqual(result.interval, 5);
   });
 
   it('polls for token and returns success status with tokens', async () => {
     const client = new MarketplaceClient();
     const result = await client.pollDeviceToken('test-device-code');
-    expect(result.status).toBe('success');
+    assert.strictEqual(result.status, 'success');
     if (result.status === 'success') {
-      expect(result.tokens).toBeDefined();
-      expect(result.tokens.access_token).toBeDefined();
-      expect(result.tokens.refresh_token).toBe('test-refresh-token');
+      assert.ok(result.tokens !== undefined);
+      assert.ok(result.tokens.access_token !== undefined);
+      assert.strictEqual(result.tokens.refresh_token, 'test-refresh-token');
     }
   });
 
@@ -35,7 +40,7 @@ describe('Auth Flow (MSW)', () => {
     );
     const client = new MarketplaceClient();
     const result = await client.pollDeviceToken('test-device-code');
-    expect(result.status).toBe('authorization_pending');
+    assert.strictEqual(result.status, 'authorization_pending');
   });
 
   it('returns access_denied status when user denies', async () => {
@@ -46,7 +51,7 @@ describe('Auth Flow (MSW)', () => {
     );
     const client = new MarketplaceClient();
     const result = await client.pollDeviceToken('test-device-code');
-    expect(result.status).toBe('access_denied');
+    assert.strictEqual(result.status, 'access_denied');
   });
 
   it('returns expired_token status when token expires', async () => {
@@ -57,7 +62,7 @@ describe('Auth Flow (MSW)', () => {
     );
     const client = new MarketplaceClient();
     const result = await client.pollDeviceToken('test-device-code');
-    expect(result.status).toBe('expired_token');
+    assert.strictEqual(result.status, 'expired_token');
   });
 
   it('throws on unexpected error from server', async () => {
@@ -67,6 +72,6 @@ describe('Auth Flow (MSW)', () => {
       )
     );
     const client = new MarketplaceClient();
-    await expect(client.pollDeviceToken('test-device-code')).rejects.toThrow('Unexpected error');
+    await assert.rejects(async () => { await client.pollDeviceToken('test-device-code'); }, { message: /Unexpected error/i });
   });
 });

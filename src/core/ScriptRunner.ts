@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import child_process from 'node:child_process';
 import readline from 'readline';
 import chalk from 'chalk';
 
@@ -32,7 +32,7 @@ export class ScriptRunner {
     }
 
     return new Promise<void>((resolve, reject) => {
-      const child = spawn(script.command, script.args ?? [], {
+      const child = child_process.spawn(script.command, script.args ?? [], {
         cwd: script.cwd,
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: true,

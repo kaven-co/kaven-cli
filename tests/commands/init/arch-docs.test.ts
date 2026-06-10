@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ProjectInitializer } from "../../../src/core/ProjectInitializer.js";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";
 
@@ -35,8 +40,8 @@ describe("D2.3 — Architecture Docs Initializer", () => {
     const sourceTree = await fs.readFile(path.join(tempDir, "docs/architecture/source-tree.md"), "utf-8");
     const codingStandards = await fs.readFile(path.join(tempDir, "docs/architecture/coding-standards.md"), "utf-8");
 
-    expect(techStack).toContain("Tech Stack — my-awesome-saas");
-    expect(sourceTree).toContain("Source Tree — my-awesome-saas");
-    expect(codingStandards).toContain("Coding Standards — my-awesome-saas");
+    assert.ok(techStack.includes("Tech Stack — my-awesome-saas"));
+    assert.ok(sourceTree.includes("Source Tree — my-awesome-saas"));
+    assert.ok(codingStandards.includes("Coding Standards — my-awesome-saas"));
   });
 });

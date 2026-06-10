@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ManifestParser } from "../../src/core/ManifestParser.js";
 import fs from "fs-extra";
 import path from "path";
@@ -54,10 +59,10 @@ describe("ManifestParser", () => {
 
     const manifest = await parser.parse(manifestPath);
 
-    expect(manifest.name).toBe("payments");
-    expect(manifest.version).toBe("1.0.0");
-    expect(manifest.dependencies.npm).toContain("stripe@^14.0.0");
-    expect(manifest.injections).toHaveLength(1);
+    assert.strictEqual(manifest.name, "payments");
+    assert.strictEqual(manifest.version, "1.0.0");
+    assert.ok(manifest.dependencies.npm.includes("stripe@^14.0.0"));
+    assert.strictEqual(manifest.injections.length, 1);
   });
 
   it("should reject invalid version format", async () => {
@@ -73,9 +78,9 @@ describe("ManifestParser", () => {
       }),
     );
 
-    await expect(parser.parse(manifestPath)).rejects.toThrow(
-      "Invalid manifest",
-    );
+    await assert.rejects(async () => { await parser.parse(manifestPath); }, { message: 
+      /Invalid manifest/i,
+     });
   });
 
   it("should require name field", async () => {
@@ -87,7 +92,7 @@ describe("ManifestParser", () => {
       }),
     );
 
-    await expect(parser.parse(manifestPath)).rejects.toThrow();
+    await assert.rejects(async () => { await parser.parse(manifestPath); });
   });
 
   it("should validate manifest and return errors", async () => {
@@ -102,7 +107,7 @@ describe("ManifestParser", () => {
 
     const result = await parser.validate(manifestPath);
 
-    expect(result.valid).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(0);
+    assert.strictEqual(result.valid, false);
+    assert.ok(result.errors.length > 0);
   });
 });

@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import fs from "fs-extra";
 import path from "path";
-import { ALL_CAPABILITIES, TIER_DEFAULTS, FeatureTier } from "../../lib/capabilities-catalog.js";
-export { FeatureTier };
+import { ALL_CAPABILITIES, TIER_DEFAULTS, type FeatureTier } from "../../lib/capabilities-catalog.js";
+export type { FeatureTier };
 
 export interface FeaturesOptions {
   tier?: FeatureTier;

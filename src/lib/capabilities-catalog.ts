@@ -4,6 +4,7 @@ export type CapabilityType = "boolean" | "numeric";
 export type FeatureTier = "starter" | "complete" | "pro" | "enterprise";
 
 export interface CapabilityDefinition {
+
   key: string;
   type: CapabilityType;
   description: string;

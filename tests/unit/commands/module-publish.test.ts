@@ -1,4 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
@@ -17,7 +22,7 @@ describe("module publish", () => {
 
   afterEach(async () => {
     await fs.remove(testDir);
-    vi.restoreAllMocks();
+
   });
 
   // Zod schema validation tests
@@ -31,7 +36,7 @@ describe("module publish", () => {
         tier: "complete",
       };
       const result = moduleJsonSchema.safeParse(valid);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     });
 
     it("rejects slug with uppercase letters", () => {
@@ -42,7 +47,7 @@ describe("module publish", () => {
         description: "desc",
         tier: "complete",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("rejects slug with spaces", () => {
@@ -53,7 +58,7 @@ describe("module publish", () => {
         description: "desc",
         tier: "free",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("rejects invalid semver version", () => {
@@ -64,7 +69,7 @@ describe("module publish", () => {
         description: "desc",
         tier: "free",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("rejects invalid tier value", () => {
@@ -75,7 +80,7 @@ describe("module publish", () => {
         description: "desc",
         tier: "enterprise-plus",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("rejects empty name", () => {
@@ -86,7 +91,7 @@ describe("module publish", () => {
         description: "desc",
         tier: "free",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
 
     it("accepts all valid tier values", () => {
@@ -99,7 +104,7 @@ describe("module publish", () => {
           description: "desc",
           tier,
         });
-        expect(result.success).toBe(true);
+        assert.strictEqual(result.success, true);
       }
     });
 
@@ -113,10 +118,10 @@ describe("module publish", () => {
         author: "Kaven",
         license: "Apache-2.0",
       });
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
       if (result.success) {
-        expect(result.data.author).toBe("Kaven");
-        expect(result.data.license).toBe("Apache-2.0");
+        assert.strictEqual(result.data.author, "Kaven");
+        assert.strictEqual(result.data.license, "Apache-2.0");
       }
     });
 
@@ -127,7 +132,7 @@ describe("module publish", () => {
         version: "1.0.0",
         tier: "free",
       });
-      expect(result.success).toBe(false);
+      assert.strictEqual(result.success, false);
     });
   });
 
@@ -146,7 +151,7 @@ describe("module publish", () => {
 
       const raw = await fs.readJson(moduleJsonPath);
       const result = moduleJsonSchema.safeParse(raw);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     });
   });
 });

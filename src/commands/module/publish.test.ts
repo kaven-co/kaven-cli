@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { moduleJsonSchema } from "./publish.js";
 
 describe("C2.2: Module Publish", () => {
@@ -12,7 +13,7 @@ describe("C2.2: Module Publish", () => {
     };
 
     const result = moduleJsonSchema.safeParse(validModule);
-    expect(result.success).toBe(true);
+    assert.strictEqual(result.success, true);
   });
 
   it("C2.2.2: Should reject invalid slug", () => {
@@ -25,7 +26,7 @@ describe("C2.2: Module Publish", () => {
     };
 
     const result = moduleJsonSchema.safeParse(invalidModule);
-    expect(result.success).toBe(false);
+    assert.strictEqual(result.success, false);
   });
 
   it("C2.2.3: Should reject invalid version", () => {
@@ -38,7 +39,7 @@ describe("C2.2: Module Publish", () => {
     };
 
     const result = moduleJsonSchema.safeParse(invalidModule);
-    expect(result.success).toBe(false);
+    assert.strictEqual(result.success, false);
   });
 
   it("C2.2.4: Should accept valid tiers", () => {
@@ -54,7 +55,7 @@ describe("C2.2: Module Publish", () => {
       };
 
       const result = moduleJsonSchema.safeParse(module);
-      expect(result.success).toBe(true);
+      assert.strictEqual(result.success, true);
     }
   });
 });

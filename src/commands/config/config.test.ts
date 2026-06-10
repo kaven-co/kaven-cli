@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import path from "node:path";
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
@@ -28,9 +30,9 @@ describe("C2.4: Config Management", () => {
     const manager = new ConfigManager();
     await manager.initialize();
 
-    expect(manager.get("registry")).toBe("https://marketplace.kaven.site");
-    expect(manager.get("telemetry")).toBe(true);
-    expect(manager.get("theme")).toBe("dark");
+    assert.strictEqual(manager.get("registry"), "https://marketplace.kaven.site");
+    assert.strictEqual(manager.get("telemetry"), true);
+    assert.strictEqual(manager.get("theme"), "dark");
   });
 
   it("C2.4.2: Should persist config to disk", async () => {
@@ -46,10 +48,10 @@ describe("C2.4: Config Management", () => {
 
     if (await fs.pathExists(configPath)) {
       const stored = await fs.readJson(configPath);
-      expect(stored.theme).toBe("light");
+      assert.strictEqual(stored.theme, "light");
     } else {
       // If not in temp dir, just verify the manager has it
-      expect(manager.get("theme")).toBe("light");
+      assert.strictEqual(manager.get("theme"), "light");
     }
   });
 
@@ -58,9 +60,9 @@ describe("C2.4: Config Management", () => {
     await manager.initialize();
     const all = manager.getAll();
 
-    expect(all).toHaveProperty("registry");
-    expect(all).toHaveProperty("telemetry");
-    expect(all).toHaveProperty("theme");
+    assert.ok("registry" in all);
+    assert.ok("telemetry" in all);
+    assert.ok("theme" in all);
   });
 
   it("C2.4.4: Should reset to defaults", async () => {
@@ -70,6 +72,6 @@ describe("C2.4: Config Management", () => {
     await manager.reset();
 
     const config = manager.getAll();
-    expect(config.theme).toBe("dark");
+    assert.strictEqual(config.theme, "dark");
   });
 });

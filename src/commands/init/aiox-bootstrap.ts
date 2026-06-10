@@ -1,7 +1,9 @@
-import { execSync } from "node:child_process";
-import * as fs from "node:fs";
+import * as cp from "node:child_process";
+export const child_process = { ...cp };
+import fs from "fs-extra";
 import * as path from "node:path";
-import ora from "ora";
+import oraModule from "ora";
+export const ui = { ora: oraModule };
 import chalk from "chalk";
 
 /**
@@ -31,7 +33,7 @@ export async function runEnvironmentBootstrap(
     }
   }
 
-  const spinner = ora("Bootstrapping AIOX environment...").start();
+  const spinner = ui.ora("Bootstrapping AIOX environment...").start();
 
   try {
     // The AIOX Core exposes a CLI at bin/aiox.js
@@ -42,7 +44,7 @@ export async function runEnvironmentBootstrap(
       ? ".aiox-core/bin/aiox.js"
       : ".aiox/bin/aiox.js"; // Fallback for dev symlink
 
-    execSync(`node ${binPath} devops environment-bootstrap --quiet`, {
+    child_process.execSync(`node ${binPath} devops environment-bootstrap --quiet`, {
       cwd: projectDir,
       stdio: "pipe",
       timeout: 60000, // 1 minute timeout

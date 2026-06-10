@@ -1,7 +1,9 @@
-import { describe, it, expect, afterEach } from "vitest";
+import path from "node:path";
+import { afterEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
-import path from "path";
-import os from "os";
+import path from "node:path";
+import os from "node:os";
 import { SchemaActivator, KAVEN_MODULES } from "../../core/SchemaActivator.js";
 
 // ============================================================
@@ -55,23 +57,19 @@ describe("SchemaActivator", () => {
     if (tmpDir) await fs.remove(tmpDir);
   });
 
-  // ─── exists() ───────────────────────────────────────────
-
   describe("exists()", () => {
     it("retorna true quando schema existe", async () => {
       tmpDir = await setupProjectDir("// schema");
       const activator = new SchemaActivator(tmpDir);
-      expect(await activator.exists()).toBe(true);
+      assert.strictEqual(await activator.exists(), true);
     });
 
     it("retorna false quando schema não existe", async () => {
       tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "kaven-test-"));
       const activator = new SchemaActivator(tmpDir);
-      expect(await activator.exists()).toBe(false);
+      assert.strictEqual(await activator.exists(), false);
     });
   });
-
-  // ─── getModuleStatus() com marcadores ──────────────────
 
   describe("getModuleStatus() com marcadores BEGIN/END", () => {
     it("detecta módulo ativo (linhas descomentadas)", async () => {
@@ -80,8 +78,8 @@ describe("SchemaActivator", () => {
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
 
       const status = await activator.getModuleStatus(def);
-      expect(status.active).toBe(true);
-      expect(status.hasMarkers).toBe(true);
+      assert.strictEqual(status.active, true);
+      assert.strictEqual(status.hasMarkers, true);
     });
 
     it("detecta módulo inativo (linhas comentadas)", async () => {
@@ -90,12 +88,10 @@ describe("SchemaActivator", () => {
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
 
       const status = await activator.getModuleStatus(def);
-      expect(status.active).toBe(false);
-      expect(status.hasMarkers).toBe(true);
+      assert.strictEqual(status.active, false);
+      assert.strictEqual(status.hasMarkers, true);
     });
   });
-
-  // ─── getModuleStatus() sem marcadores ──────────────────
 
   describe("getModuleStatus() sem marcadores", () => {
     it("detecta módulo ativo pelo nome do model", async () => {
@@ -104,8 +100,8 @@ describe("SchemaActivator", () => {
       const def = KAVEN_MODULES.find((m) => m.id === "projects")!;
 
       const status = await activator.getModuleStatus(def);
-      expect(status.active).toBe(true);
-      expect(status.hasMarkers).toBe(false);
+      assert.strictEqual(status.active, true);
+      assert.strictEqual(status.hasMarkers, false);
     });
 
     it("detecta módulo inativo quando todos os models estão comentados", async () => {
@@ -114,12 +110,10 @@ describe("SchemaActivator", () => {
       const def = KAVEN_MODULES.find((m) => m.id === "projects")!;
 
       const status = await activator.getModuleStatus(def);
-      expect(status.active).toBe(false);
-      expect(status.hasMarkers).toBe(false);
+      assert.strictEqual(status.active, false);
+      assert.strictEqual(status.hasMarkers, false);
     });
   });
-
-  // ─── activateModule() ──────────────────────────────────
 
   describe("activateModule()", () => {
     it("descomenta o bloco do módulo", async () => {
@@ -130,13 +124,12 @@ describe("SchemaActivator", () => {
       await activator.activateModule(def);
 
       const statusAfter = await activator.getModuleStatus(def);
-      expect(statusAfter.active).toBe(true);
+      assert.strictEqual(statusAfter.active, true);
     });
 
     it("remove apenas um nível de comentário por linha", async () => {
       const BEGIN = "// [KAVEN_MODULE:BILLING BEGIN]";
       const END = "// [KAVEN_MODULE:BILLING END]";
-      // Linha com dois níveis de comentário
       const schema = `${BEGIN}\n// // model Invoice {}\n${END}\n`;
       tmpDir = await setupProjectDir(schema);
       const activator = new SchemaActivator(tmpDir);
@@ -148,8 +141,7 @@ describe("SchemaActivator", () => {
         path.join(tmpDir, "packages", "database", "prisma", "schema.extended.prisma"),
         "utf-8",
       );
-      // Deve remover apenas o primeiro nível
-      expect(content).toContain("// model Invoice {}");
+      assert.ok(content.includes("// model Invoice {}"));
     });
 
     it("lança erro se marcadores não existem", async () => {
@@ -157,7 +149,10 @@ describe("SchemaActivator", () => {
       const activator = new SchemaActivator(tmpDir);
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
 
-      await expect(activator.activateModule(def)).rejects.toThrow();
+      await assert.rejects(
+        async () => { await activator.activateModule(def); },
+        /não possui uma seção marcada/
+      );
     });
 
     it("é idempotente — ativar um módulo já ativo não altera o schema", async () => {
@@ -177,11 +172,9 @@ describe("SchemaActivator", () => {
         "utf-8",
       );
 
-      expect(before).toBe(after);
+      assert.strictEqual(before, after);
     });
   });
-
-  // ─── deactivateModule() ────────────────────────────────
 
   describe("deactivateModule()", () => {
     it("comenta o bloco do módulo", async () => {
@@ -192,7 +185,7 @@ describe("SchemaActivator", () => {
       await activator.deactivateModule(def);
 
       const statusAfter = await activator.getModuleStatus(def);
-      expect(statusAfter.active).toBe(false);
+      assert.strictEqual(statusAfter.active, false);
     });
 
     it("lança erro se marcadores não existem", async () => {
@@ -200,11 +193,13 @@ describe("SchemaActivator", () => {
       const activator = new SchemaActivator(tmpDir);
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
 
-      await expect(activator.deactivateModule(def)).rejects.toThrow();
+      await assert.rejects(
+        async () => { await activator.deactivateModule(def); },
+        /não possui uma seção marcada/
+      );
     });
 
     it("não adiciona duplo comentário em linhas já comentadas", async () => {
-      // Inicia com o módulo já inativo — desativar de novo não deve duplicar //
       tmpDir = await setupProjectDir(schemaWithMarkers("billing", false));
       const activator = new SchemaActivator(tmpDir);
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
@@ -215,12 +210,9 @@ describe("SchemaActivator", () => {
         path.join(tmpDir, "packages", "database", "prisma", "schema.extended.prisma"),
         "utf-8",
       );
-      // Não deve ter `// //`
-      expect(content).not.toContain("// //");
+      assert.strictEqual(content.includes("// //"), false, "Não deve conter duplo comentário");
     });
   });
-
-  // ─── activate → deactivate → activate (round-trip) ────
 
   describe("round-trip activate → deactivate → activate", () => {
     it("schema permanece válido após ciclo completo", async () => {
@@ -228,31 +220,23 @@ describe("SchemaActivator", () => {
       const activator = new SchemaActivator(tmpDir);
       const def = KAVEN_MODULES.find((m) => m.id === "billing")!;
 
-      // Desativa
       await activator.deactivateModule(def);
-      const afterDeactivate = await activator.getModuleStatus(def);
-      expect(afterDeactivate.active).toBe(false);
+      assert.strictEqual((await activator.getModuleStatus(def)).active, false);
 
-      // Reativa
       await activator.activateModule(def);
-      const afterActivate = await activator.getModuleStatus(def);
-      expect(afterActivate.active).toBe(true);
+      assert.strictEqual((await activator.getModuleStatus(def)).active, true);
     });
   });
 });
 
-// ============================================================
-// KAVEN_MODULES — definições
-// ============================================================
-
 describe("KAVEN_MODULES definitions", () => {
   it("todos os módulos têm id, label, models e dependsOn", () => {
     for (const m of KAVEN_MODULES) {
-      expect(m.id).toBeTruthy();
-      expect(m.label).toBeTruthy();
-      expect(Array.isArray(m.models)).toBe(true);
-      expect(m.models.length).toBeGreaterThan(0);
-      expect(Array.isArray(m.dependsOn)).toBe(true);
+      assert.ok(m.id);
+      assert.ok(m.label);
+      assert.strictEqual(Array.isArray(m.models), true);
+      assert.ok(m.models.length > 0);
+      assert.strictEqual(Array.isArray(m.dependsOn), true);
     }
   });
 
@@ -260,19 +244,19 @@ describe("KAVEN_MODULES definitions", () => {
     const ids = new Set(KAVEN_MODULES.map((m) => m.id));
     for (const m of KAVEN_MODULES) {
       for (const dep of m.dependsOn) {
-        expect(ids.has(dep)).toBe(true);
+        assert.strictEqual(ids.has(dep), true);
       }
     }
   });
 
   it("billing tem 6 models", () => {
     const billing = KAVEN_MODULES.find((m) => m.id === "billing")!;
-    expect(billing.models).toHaveLength(6);
+    assert.strictEqual(billing.models.length, 6);
   });
 
   it("projects tem Project e Task", () => {
     const projects = KAVEN_MODULES.find((m) => m.id === "projects")!;
-    expect(projects.models).toContain("Project");
-    expect(projects.models).toContain("Task");
+    assert.ok(projects.models.includes("Project"));
+    assert.ok(projects.models.includes("Task"));
   });
 });
