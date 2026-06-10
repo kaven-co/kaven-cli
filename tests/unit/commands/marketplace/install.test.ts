@@ -195,6 +195,7 @@ describe("marketplaceInstall (C1.5)", () => {
     // Re-apply fs-extra mocks
     mock.method(fs, "mkdtemp", () => Promise.resolve("/tmp/kaven-install-abc"));
     mock.method(fs, "ensureDir", () => Promise.resolve(undefined));
+    mock.method(fs, "copy", () => Promise.resolve(undefined));
     mock.method(fs, "remove", () => Promise.resolve(undefined));
     mock.method(fs, "pathExists", () => Promise.resolve(true));
     mock.method(fs, "readJson", () => Promise.resolve(makeManifest()));
