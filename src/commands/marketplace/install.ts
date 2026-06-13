@@ -21,6 +21,7 @@ import {
 } from "../../infrastructure/errors.js";
 import { verifyDownload } from "../../core/SignatureVerifier.js";
 import type { ModuleManifest } from "../../core/ModuleInstaller.js";
+import { cacheBaseline } from "../../core/ModuleCache.js";
 
 export interface MarketplaceInstallOptions {
   version?: string;
@@ -44,13 +45,6 @@ function formatBytes(bytes: number): string {
 }
 
 
-async function cacheBaseline(slug: string, version: string, extractedPath: string, projectRoot: string) {
-  const KAVEN_CACHE_DIR = path.join(projectRoot, '.kaven', 'cache', 'modules');
-  const cachePath = path.join(KAVEN_CACHE_DIR, `${slug}-${version}`);
-  
-  await fs.ensureDir(cachePath);
-  await fs.copy(extractedPath, cachePath);
-}
 
 export async function marketplaceInstall(
   slug: string,

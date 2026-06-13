@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { moduleDoctor } from "./commands/module/doctor.js";
 import { moduleAdd } from "./commands/module/add.js";
 import { moduleRemove } from "./commands/module/remove.js";
+import { moduleUpdate } from "./commands/module/update.js";
 import { modulePublish } from "./commands/module/publish.js";
 import {
   moduleActivate,
@@ -241,6 +242,21 @@ Examples:
 `
     )
     .action((root) => moduleListActivation(root));
+
+  moduleCommand
+    .command("update [slug]")
+    .description("Update an installed marketplace module to the latest version")
+    .option("--skip-verify", "Skip Ed25519 signature verification (dev only)")
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ kaven module update payments            Update the payments module
+  $ kaven module update                     Interactive: select module to update
+  $ kaven module update payments --skip-verify  Skip signature check (dev only)
+`
+    )
+    .action((slug, opts) => moduleUpdate(slug, undefined, { skipVerify: opts.skipVerify ?? false }));
 
   /**
    * Auth Group
