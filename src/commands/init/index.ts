@@ -160,7 +160,9 @@ export async function initProject(
       );
       await fs.writeFile(claudePath, finalContent, "utf-8");
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn(pc.dim(`[init] CLAUDE.md injection skipped: ${err instanceof Error ? err.message : String(err)}`));
+  }
 
   s.stop(pc.green("Project configured"));
 
@@ -215,5 +217,7 @@ export async function initProject(
       locale: answers.locale,
       currency: answers.currency,
     }, "global");
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn(pc.dim(`[init] Config save skipped: ${err instanceof Error ? err.message : String(err)}`));
+  }
 }
