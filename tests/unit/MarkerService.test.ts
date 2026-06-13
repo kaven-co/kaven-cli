@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { MarkerService } from "../../src/core/MarkerService.js";
 
 describe("MarkerService", () => {
@@ -12,7 +17,7 @@ app.listen(3000);
 `;
 
   it("should detect missing module", () => {
-    expect(service.hasModule(sampleFile, "payments")).toBe(false);
+    assert.strictEqual(service.hasModule(sampleFile, "payments"), false);
   });
 
   it("should inject module at anchor", () => {
@@ -23,9 +28,9 @@ app.listen(3000);
       "app.use('/payments', paymentsRouter);",
     );
 
-    expect(result).toContain("// [KAVEN_MODULE:payments BEGIN]");
-    expect(result).toContain("app.use('/payments', paymentsRouter);");
-    expect(result).toContain("// [KAVEN_MODULE:payments END]");
+    assert.ok(result.includes("// [KAVEN_MODULE:payments BEGIN]"));
+    assert.ok(result.includes("app.use('/payments', paymentsRouter);"));
+    assert.ok(result.includes("// [KAVEN_MODULE:payments END]"));
   });
 
   it("should prevent double injection", () => {
@@ -36,14 +41,14 @@ app.listen(3000);
       "app.use('/payments', paymentsRouter);",
     );
 
-    expect(() => {
+    assert.throws(() => {
       service.injectModule(
         injected,
         "// [ANCHOR:ROUTES]",
         "payments",
         "app.use('/payments', paymentsRouter);",
       );
-    }).toThrow("Module payments already injected");
+    }, { message: "Module payments already injected" });
   });
 
   it("should remove module cleanly", () => {
@@ -56,20 +61,20 @@ app.listen(3000);
 
     const removed = service.removeModule(injected, "payments");
 
-    expect(removed).not.toContain("KAVEN_MODULE:payments");
-    expect(removed).not.toContain("paymentsRouter");
-    expect(removed).toContain("// [ANCHOR:ROUTES]");
+    assert.ok(!removed.includes("KAVEN_MODULE:payments"));
+    assert.ok(!removed.includes("paymentsRouter"));
+    assert.ok(removed.includes("// [ANCHOR:ROUTES]"));
   });
 
   it("should throw if anchor not found", () => {
-    expect(() => {
+    assert.throws(() => {
       service.injectModule(
         sampleFile,
         "// [ANCHOR:MISSING]",
         "payments",
         "code",
       );
-    }).toThrow("Anchor not found");
+    }, { message: /Anchor not found/i });
   });
 
   it("should detect marker positions", () => {
@@ -82,10 +87,10 @@ app.listen(3000);
 
     const result = service.detectMarkers(injected, "payments");
 
-    expect(result.found).toBe(true);
-    expect(result.beginLine).toBeGreaterThan(0);
-    expect(result.endLine).toBeGreaterThan(result.beginLine!);
-    expect(result.content).toBe("code here");
+    assert.strictEqual(result.found, true);
+    assert.ok(result.beginLine > 0);
+    assert.ok(result.endLine > result.beginLine!);
+    assert.strictEqual(result.content, "code here");
   });
 
   it("should handle multiple modules", () => {
@@ -104,11 +109,11 @@ app.listen(3000);
       "auth code",
     );
 
-    expect(service.hasModule(result, "payments")).toBe(true);
-    expect(service.hasModule(result, "auth")).toBe(true);
+    assert.strictEqual(service.hasModule(result, "payments"), true);
+    assert.strictEqual(service.hasModule(result, "auth"), true);
 
     result = service.removeModule(result, "payments");
-    expect(service.hasModule(result, "payments")).toBe(false);
-    expect(service.hasModule(result, "auth")).toBe(true);
+    assert.strictEqual(service.hasModule(result, "payments"), false);
+    assert.strictEqual(service.hasModule(result, "auth"), true);
   });
 });

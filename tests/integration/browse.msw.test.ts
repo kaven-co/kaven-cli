@@ -1,11 +1,16 @@
-import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { after, afterEach, before, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { http, HttpResponse } from 'msw';
 import { mockServer } from '../helpers/msw-server.js';
 import { MarketplaceClient } from '../../src/infrastructure/MarketplaceClient.js';
 
-beforeAll(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
+before(() => mockServer.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => mockServer.resetHandlers());
-afterAll(() => mockServer.close());
+after(() => mockServer.close());
 
 describe('marketplace browse (MSW integration)', () => {
   it('fetches categories successfully', async () => {
@@ -18,9 +23,9 @@ describe('marketplace browse (MSW integration)', () => {
     const client = new MarketplaceClient();
     const categories = await client.getCategories();
 
-    expect(categories).toBeInstanceOf(Array);
-    expect(categories).toContain('auth');
-    expect(categories).toContain('billing');
+    assert.ok(categories instanceof Array);
+    assert.ok(categories.includes('auth'));
+    assert.ok(categories.includes('billing'));
   });
 
   it('returns empty categories gracefully', async () => {
@@ -32,15 +37,15 @@ describe('marketplace browse (MSW integration)', () => {
 
     const client = new MarketplaceClient();
     const categories = await client.getCategories();
-    expect(categories).toHaveLength(0);
+    assert.strictEqual(categories.length, 0);
   });
 
   it('fetches module list for a category', async () => {
     const client = new MarketplaceClient();
     const result = await client.listModules({ category: 'billing' });
 
-    expect(result.data).toBeInstanceOf(Array);
-    expect(result.data.length).toBeGreaterThanOrEqual(0);
+    assert.ok(result.data instanceof Array);
+    assert.ok(result.data.length >= 0);
   });
 
   it('fetches paginated module listing', async () => {
@@ -61,18 +66,18 @@ describe('marketplace browse (MSW integration)', () => {
     const client = new MarketplaceClient();
     const result = await client.listModules({ page: 1, pageSize: 10 });
 
-    expect(result.data).toHaveLength(2);
-    expect(result.data[0].slug).toBe('auth');
-    expect(result.data[1].slug).toBe('payments');
-    expect(result.total).toBe(2);
+    assert.strictEqual(result.data.length, 2);
+    assert.strictEqual(result.data[0].slug, 'auth');
+    assert.strictEqual(result.data[1].slug, 'payments');
+    assert.strictEqual(result.total, 2);
   });
 
   it('getModule returns module details', async () => {
     const client = new MarketplaceClient();
     const module = await client.getModule('payments');
 
-    expect(module).toBeDefined();
-    expect(module.slug).toBe('payments');
+    assert.ok(module !== undefined);
+    assert.strictEqual(module.slug, 'payments');
   });
 
   it('throws error on categories auth failure (401)', async () => {
@@ -84,7 +89,7 @@ describe('marketplace browse (MSW integration)', () => {
 
     const client = new MarketplaceClient();
     // 401 is not retried, throws immediately
-    await expect(client.getCategories()).rejects.toThrow();
+    await assert.rejects(async () => { await client.getCategories(); }, { message: /Unauthorized/i });
   });
 
   it('falls back to /search facets when /categories is missing (404)', async () => {
@@ -107,6 +112,6 @@ describe('marketplace browse (MSW integration)', () => {
 
     const client = new MarketplaceClient();
     const categories = await client.getCategories();
-    expect(categories).toEqual(['auth', 'billing']);
+    assert.deepStrictEqual(categories, ['auth', 'billing']);
   });
 });

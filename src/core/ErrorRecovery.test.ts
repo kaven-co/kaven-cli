@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import path from "node:path";
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
@@ -33,8 +35,8 @@ describe("C2.7: Error Recovery", () => {
 
     const backupPath = await recovery.createBackup(projectDir, "test-operation");
 
-    expect(await fs.pathExists(backupPath)).toBe(true);
-    expect(await fs.pathExists(path.join(backupPath, "package.json"))).toBe(true);
+    assert.strictEqual(await fs.pathExists(backupPath), true);
+    assert.strictEqual(await fs.pathExists(path.join(backupPath, "package.json")), true);
   });
 
   it("C2.7.2: Should validate pre-conditions", async () => {
@@ -42,7 +44,7 @@ describe("C2.7: Error Recovery", () => {
 
     // Empty project - should fail
     const result1 = await recovery.validatePreConditions(projectDir);
-    expect(result1.valid).toBe(false);
+    assert.strictEqual(result1.valid, false);
 
     // Setup proper project
     await fs.writeJson(path.join(projectDir, "package.json"), { name: "test" });
@@ -50,7 +52,7 @@ describe("C2.7: Error Recovery", () => {
     await fs.ensureDir(path.join(projectDir, ".git"));
 
     const result2 = await recovery.validatePreConditions(projectDir);
-    expect(result2.valid).toBe(true);
+    assert.strictEqual(result2.valid, true);
   });
 
   it("C2.7.3: Should validate post-conditions", async () => {
@@ -65,8 +67,8 @@ describe("C2.7: Error Recovery", () => {
     await fs.writeFile(path.join(projectDir, ".env.example"), "");
 
     const result = await recovery.validatePostConditions(projectDir);
-    expect(result.healthy).toBe(true);
-    expect(result.issues.length).toBe(0);
+    assert.strictEqual(result.healthy, true);
+    assert.strictEqual(result.issues.length, 0);
   });
 
   it("C2.7.4: Should list backups", async () => {
@@ -77,7 +79,7 @@ describe("C2.7: Error Recovery", () => {
     await recovery.createBackup(projectDir, "op1");
 
     const backups = await recovery.listBackups();
-    expect(backups.length).toBeGreaterThan(0);
+    assert.ok(backups.length > 0);
   });
 
   it("C2.7.5: Should cleanup old backups", async () => {
@@ -100,8 +102,8 @@ describe("C2.7: Error Recovery", () => {
     await recovery.cleanupBackups(3);
 
     backups = await recovery.listBackups();
-    expect(backups.length).toBeLessThanOrEqual(3);
-    expect(backups.length).toBeLessThan(originalCount);
+    assert.ok(backups.length <= 3);
+    assert.ok(backups.length < originalCount);
   });
 
   it("C2.7.6: Should detect invalid package.json", async () => {
@@ -110,7 +112,7 @@ describe("C2.7: Error Recovery", () => {
     await fs.writeFile(path.join(projectDir, "package.json"), "{ invalid json");
 
     const result = await recovery.validatePostConditions(projectDir);
-    expect(result.healthy).toBe(false);
-    expect(result.issues.some((i) => i.includes("invalid JSON"))).toBe(true);
+    assert.strictEqual(result.healthy, false);
+    assert.strictEqual(result.issues.some((i) => i.includes("invalid JSON")), true);
   });
 });

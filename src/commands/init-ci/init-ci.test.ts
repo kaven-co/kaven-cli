@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 describe("C2.6: CI/CD Integration", () => {
   it("C2.6.1: Should define test workflow", () => {
     // Test that GitHub Actions workflow can be generated
@@ -11,8 +11,8 @@ jobs:
   test:
     runs-on: ubuntu-latest`;
 
-    expect(workflowContent).toContain("name: Tests");
-    expect(workflowContent).toContain("runs-on: ubuntu-latest");
+    assert.ok(workflowContent.includes("name: Tests"));
+    assert.ok(workflowContent.includes("runs-on: ubuntu-latest"));
   });
 
   it("C2.6.2: Should define publish workflow", () => {
@@ -25,8 +25,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest`;
 
-    expect(workflowContent).toContain("Publish Module");
-    expect(workflowContent).toContain("tags:");
+    assert.ok(workflowContent.includes("Publish Module"));
+    assert.ok(workflowContent.includes("tags:"));
   });
 
   it("C2.6.3: Should create pre-commit hook", () => {
@@ -35,8 +35,8 @@ set -e
 pnpm lint || exit 1
 pnpm typecheck || exit 1`;
 
-    expect(hookContent).toContain("#!/bin/bash");
-    expect(hookContent).toContain("pnpm lint");
+    assert.ok(hookContent.includes("#!/bin/bash"));
+    assert.ok(hookContent.includes("pnpm lint"));
   });
 
   it("C2.6.4: Should include environment setup", () => {
@@ -47,7 +47,7 @@ pnpm typecheck || exit 1`;
         with:
           node-version: 20`;
 
-    expect(workflowContent).toContain("node-version: 20");
-    expect(workflowContent).toContain("pnpm/action-setup");
+    assert.ok(workflowContent.includes("node-version: 20"));
+    assert.ok(workflowContent.includes("pnpm/action-setup"));
   });
 });

@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ModuleDoctor } from "../../src/core/ModuleDoctor.js";
 import { MarkerService } from "../../src/core/MarkerService.js";
 import { ManifestParser } from "../../src/core/ManifestParser.js";
@@ -37,7 +42,7 @@ describe("ModuleDoctor", () => {
   it("should detect all anchors present", async () => {
     const results = await doctor.checkAnchors();
     const errors = results.filter((r) => r.severity === "error");
-    expect(errors).toHaveLength(0);
+    assert.strictEqual(errors.length, 0);
   });
 
   it("should detect missing anchor", async () => {
@@ -51,8 +56,8 @@ describe("ModuleDoctor", () => {
       r.message.includes("KAVEN_MODULE_HOOKS"),
     );
 
-    expect(missingHooksError).toBeDefined();
-    expect(missingHooksError!.severity).toBe("error");
+    assert.ok(missingHooksError !== undefined);
+    assert.strictEqual(missingHooksError!.severity, "error");
   });
 
   it("should detect missing module injection", async () => {
@@ -87,8 +92,8 @@ describe("ModuleDoctor", () => {
       r.message.includes("not injected"),
     );
 
-    expect(missingInjection).toBeDefined();
-    expect(missingInjection!.fixable).toBe(true);
+    assert.ok(missingInjection !== undefined);
+    assert.strictEqual(missingInjection!.fixable, true);
   });
 
   it("should detect missing npm dependencies", async () => {
@@ -116,7 +121,7 @@ describe("ModuleDoctor", () => {
     const results = await doctor.checkDependencies();
     const missingDep = results.find((r) => r.message.includes("stripe"));
 
-    expect(missingDep).toBeDefined();
-    expect(missingDep!.severity).toBe("warning");
+    assert.ok(missingDep !== undefined);
+    assert.strictEqual(missingDep!.severity, "warning");
   });
 });

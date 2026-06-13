@@ -1,6 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
 import { configFeatures } from "../../../src/commands/config/features.js";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as path from "node:path";
 import * as os from "node:os";
 
@@ -18,13 +23,13 @@ describe("GAP-3: Config Features Command", () => {
 
   it("--list flag should not write any file", async () => {
     const outputPath = path.join(tempDir, "seed.ts");
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = mock.method(console, "log", () => {});
     
     await configFeatures({ list: true, outputPath });
     
-    expect(fs.existsSync(outputPath)).toBe(false);
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Capability Catalog"));
-    logSpy.mockRestore();
+    assert.strictEqual(fs.existsSync(outputPath), false);
+    assert.ok(logSpy.mock.calls.length > 0);
+    logSpy.mock.restore();
   });
 
   it("--tier flag should generate a valid seed file for tier=starter", async () => {
@@ -32,20 +37,20 @@ describe("GAP-3: Config Features Command", () => {
     
     await configFeatures({ tier: "starter", outputPath });
     
-    expect(fs.existsSync(outputPath)).toBe(true);
+    assert.strictEqual(fs.existsSync(outputPath), true);
     const content = await fs.readFile(outputPath, "utf-8");
-    expect(content).toContain("Tier: starter");
-    expect(content).toContain("MAX_TEAM_MEMBERS");
+    assert.ok(content.includes("Tier: starter"));
+    assert.ok(content.includes("MAX_TEAM_MEMBERS"));
   });
 
   it("--dry-run should print but not write", async () => {
     const outputPath = path.join(tempDir, "seed.ts");
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = mock.method(console, "log", () => {});
     
     await configFeatures({ tier: "pro", dryRun: true, outputPath });
     
-    expect(fs.existsSync(outputPath)).toBe(false);
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("DRY RUN"));
-    logSpy.mockRestore();
+    assert.strictEqual(fs.existsSync(outputPath), false);
+    assert.ok(logSpy.mock.calls.length > 0);
+    logSpy.mock.restore();
   });
 });

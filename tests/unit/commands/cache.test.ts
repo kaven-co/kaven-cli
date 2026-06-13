@@ -1,4 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { CacheManager } from "../../../src/core/CacheManager.js";
 import fs from "fs-extra";
 import path from "path";
@@ -18,15 +23,15 @@ describe("cache commands", () => {
 
   afterEach(async () => {
     await fs.remove(cacheDir);
-    vi.restoreAllMocks();
+
   });
 
   // cache status
   describe("cache status", () => {
     it("shows zero stats for empty cache", async () => {
       const stats = await manager.stats();
-      expect(stats.entries).toBe(0);
-      expect(stats.totalSize).toBe(0);
+      assert.strictEqual(stats.entries, 0);
+      assert.strictEqual(stats.totalSize, 0);
     });
 
     it("reflects correct entry count after adding items", async () => {
@@ -34,8 +39,8 @@ describe("cache commands", () => {
       await manager.set("licenses:status:KAVEN-PRO", { valid: true }, 3_600_000);
 
       const stats = await manager.stats();
-      expect(stats.entries).toBe(2);
-      expect(stats.totalSize).toBeGreaterThan(0);
+      assert.strictEqual(stats.entries, 2);
+      assert.ok(stats.totalSize > 0);
     });
 
     it("shows oldest and newest dates", async () => {
@@ -44,11 +49,9 @@ describe("cache commands", () => {
       await manager.set("second:entry", "data", 60_000);
 
       const stats = await manager.stats();
-      expect(stats.oldest).toBeInstanceOf(Date);
-      expect(stats.newest).toBeInstanceOf(Date);
-      expect(stats.newest!.getTime()).toBeGreaterThanOrEqual(
-        stats.oldest!.getTime()
-      );
+      assert.ok(stats.oldest instanceof Date);
+      assert.ok(stats.newest instanceof Date);
+      assert.ok(stats.newest!.getTime() >= stats.oldest!.getTime());
     });
   });
 
@@ -61,12 +64,12 @@ describe("cache commands", () => {
       await manager.clear();
 
       const dirExists = await fs.pathExists(cacheDir);
-      expect(dirExists).toBe(false);
+      assert.strictEqual(dirExists, false);
     });
 
     it("handles clearing an already-empty cache gracefully", async () => {
       // Should not throw even if cache directory doesn't exist
-      await expect(manager.clear()).resolves.not.toThrow();
+      await assert.doesNotReject(async () => { await manager.clear(); });
     });
   });
 });

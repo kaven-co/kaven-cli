@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import { CacheManager } from "../../../src/core/CacheManager.js";
 import fs from "fs-extra";
 import path from "path";
@@ -22,14 +27,14 @@ describe("CacheManager", () => {
 
   it("returns null for a missing cache key", async () => {
     const result = await manager.get<string>("nonexistent:key");
-    expect(result).toBeNull();
+    assert.strictEqual(result, null);
   });
 
   it("stores and retrieves data before TTL expires", async () => {
     await manager.set("test:key", { hello: "world" }, 60_000);
     const result = await manager.get<{ hello: string }>("test:key");
-    expect(result).not.toBeNull();
-    expect(result?.hello).toBe("world");
+    assert.notStrictEqual(result, null);
+    assert.strictEqual(result?.hello, "world");
   });
 
   it("returns null for expired entries", async () => {
@@ -37,7 +42,7 @@ describe("CacheManager", () => {
     await manager.set("expired:key", { data: "stale" }, 1);
     await new Promise((r) => setTimeout(r, 10)); // wait for expiry
     const result = await manager.get<{ data: string }>("expired:key");
-    expect(result).toBeNull();
+    assert.strictEqual(result, null);
   });
 
   it("getStale returns expired data", async () => {
@@ -45,12 +50,12 @@ describe("CacheManager", () => {
     await new Promise((r) => setTimeout(r, 10));
 
     // get() should return null (expired)
-    expect(await manager.get("stale:key")).toBeNull();
+    assert.strictEqual(await manager.get("stale:key"), null);
 
     // getStale() should still return the data
     const stale = await manager.getStale<{ data: string }>("stale:key");
-    expect(stale).not.toBeNull();
-    expect(stale?.data).toBe("old");
+    assert.notStrictEqual(stale, null);
+    assert.strictEqual(stale?.data, "old");
   });
 
   it("returns correct stats after setting entries", async () => {
@@ -58,18 +63,18 @@ describe("CacheManager", () => {
     await manager.set("entry:2", { b: 2 }, 60_000);
 
     const stats = await manager.stats();
-    expect(stats.entries).toBe(2);
-    expect(stats.totalSize).toBeGreaterThan(0);
-    expect(stats.oldest).toBeInstanceOf(Date);
-    expect(stats.newest).toBeInstanceOf(Date);
+    assert.strictEqual(stats.entries, 2);
+    assert.ok(stats.totalSize > 0);
+    assert.ok(stats.oldest instanceof Date);
+    assert.ok(stats.newest instanceof Date);
   });
 
   it("returns zero stats for empty cache", async () => {
     const stats = await manager.stats();
-    expect(stats.entries).toBe(0);
-    expect(stats.totalSize).toBe(0);
-    expect(stats.oldest).toBeUndefined();
-    expect(stats.newest).toBeUndefined();
+    assert.strictEqual(stats.entries, 0);
+    assert.strictEqual(stats.totalSize, 0);
+    assert.strictEqual(stats.oldest, undefined);
+    assert.strictEqual(stats.newest, undefined);
   });
 
   it("clear removes all cache entries", async () => {
@@ -79,7 +84,7 @@ describe("CacheManager", () => {
     await manager.clear();
 
     const exists = await fs.pathExists(cacheDir);
-    expect(exists).toBe(false);
+    assert.strictEqual(exists, false);
   });
 
   it("evicts oldest entries when over size limit", async () => {
@@ -94,7 +99,7 @@ describe("CacheManager", () => {
     // After eviction, old entry should be gone
     // Note: evict is called after set, so one entry should remain
     const stats = await tinyManager.stats();
-    expect(stats.entries).toBeLessThanOrEqual(2);
+    assert.ok(stats.entries <= 2);
   });
 
   it("handles complex object types correctly", async () => {
@@ -107,9 +112,9 @@ describe("CacheManager", () => {
     await manager.set("complex:data", complexData, 60_000);
     const retrieved = await manager.get<typeof complexData>("complex:data");
 
-    expect(retrieved).not.toBeNull();
-    expect(retrieved?.modules[0].name).toBe("Test");
-    expect(retrieved?.pagination.total).toBe(100);
+    assert.notStrictEqual(retrieved, null);
+    assert.strictEqual(retrieved?.modules[0].name, "Test");
+    assert.strictEqual(retrieved?.pagination.total, 100);
   });
 
   it("stores different data under different keys", async () => {
@@ -119,7 +124,7 @@ describe("CacheManager", () => {
     const a = await manager.get<string>("key:a");
     const b = await manager.get<string>("key:b");
 
-    expect(a).toBe("value-a");
-    expect(b).toBe("value-b");
+    assert.strictEqual(a, "value-a");
+    assert.strictEqual(b, "value-b");
   });
 });

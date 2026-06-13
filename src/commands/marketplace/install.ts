@@ -1,9 +1,11 @@
 import chalk from "chalk";
-import ora from "ora";
+import oraModule from "ora";
+export const ui = { ora: oraModule };
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
-import * as tar from "tar";
+import * as tarModule from "tar";
+export const tar = { x: tarModule.x };
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
 import { AuthService } from "../../core/AuthService.js";
 import { ModuleInstaller } from "../../core/ModuleInstaller.js";
@@ -41,6 +43,15 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+
+async function cacheBaseline(slug: string, version: string, extractedPath: string, projectRoot: string) {
+  const KAVEN_CACHE_DIR = path.join(projectRoot, '.kaven', 'cache', 'modules');
+  const cachePath = path.join(KAVEN_CACHE_DIR, `${slug}-${version}`);
+  
+  await fs.ensureDir(cachePath);
+  await fs.copy(extractedPath, cachePath);
+}
+
 export async function marketplaceInstall(
   slug: string,
   options: MarketplaceInstallOptions = {}
@@ -72,7 +83,7 @@ export async function marketplaceInstall(
   }
   void accessToken; // used implicitly via authService in client
 
-  const spinner = ora(`Preparing installation of '${slug}'...`).start();
+  const spinner = ui.ora(`Preparing installation of '${slug}'...`).start();
   let tempDir: string | null = null;
 
   try {
@@ -227,7 +238,13 @@ export async function marketplaceInstall(
     }
     const manifest: ModuleManifest = await fs.readJson(manifestPath);
 
+    
+    // 8.5 Save Baseline Cache for Future Upgrades (3-Way Merge)
+    spinner.text = `Caching baseline for ${slug} v${installVersion}...`;
+    await cacheBaseline(slug, installVersion, extractDir, projectRoot);
+
     // 9. Delegate to ModuleInstaller
+
     spinner.text = `Installing ${slug} v${installVersion}...`;
     await installer.install(manifest);
 

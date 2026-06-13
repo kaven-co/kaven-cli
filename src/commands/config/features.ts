@@ -1,8 +1,10 @@
-import chalk from "chalk";
+import { select, confirm, text, multiselect, isCancel, cancel } from "@clack/prompts";
+import pc from "picocolors";
 import fs from "fs-extra";
-import path from "path";
-import { ALL_CAPABILITIES, TIER_DEFAULTS, FeatureTier } from "../../lib/capabilities-catalog.js";
-export { FeatureTier };
+import path from "node:path";
+import { ALL_CAPABILITIES, TIER_DEFAULTS, type FeatureTier } from "../../lib/capabilities-catalog.js";
+import { I18nService } from "../../core/I18nService.js";
+export type { FeatureTier };
 
 export interface FeaturesOptions {
   tier?: FeatureTier;
@@ -10,6 +12,13 @@ export interface FeaturesOptions {
   force?: boolean;
   dryRun?: boolean;
   outputPath?: string;
+}
+
+function handleCancel(value: unknown) {
+  if (isCancel(value)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
 }
 
 export async function configFeatures(options: FeaturesOptions): Promise<void> {
@@ -25,7 +34,8 @@ export async function configFeatures(options: FeaturesOptions): Promise<void> {
     );
 
   if (options.list) {
-    printList();
+    const i18n = await I18nService.getInstance();
+    printList(i18n);
     return;
   }
 
@@ -37,27 +47,25 @@ export async function configFeatures(options: FeaturesOptions): Promise<void> {
   await runInteractive(outputPath, options);
 }
 
-function printList(): void {
+function printList(i18n: I18nService): void {
   console.log();
-  console.log(chalk.bold.underline("Kaven Framework — Capability Catalog"));
-  console.log(chalk.gray(`${ALL_CAPABILITIES.length} capabilities total\n`));
+  console.log(pc.bold(pc.underline(i18n.t("config.features.catalogHeader"))));
+  console.log(pc.dim(i18n.t("config.features.capabilitiesTotal", { count: ALL_CAPABILITIES.length }) + "\n"));
 
   const categories = [...new Set(ALL_CAPABILITIES.map(c => c.category))];
   for (const category of categories) {
     const caps = ALL_CAPABILITIES.filter(c => c.category === category);
-    console.log(chalk.bold.cyan(`  ${category} (${caps.length})`));
+    console.log(pc.bold(pc.cyan(`  ${category} (${caps.length})`)));
     for (const cap of caps) {
-      console.log(
-        `    ${chalk.white(cap.key.padEnd(30))} ${chalk.gray(`[${cap.type}]`)}`
-      );
-      console.log(`      ${chalk.gray(cap.description)}`);
+      console.log(`    ${pc.white(cap.key.padEnd(30))} ${pc.dim(`[${cap.type}]`)}`);
+      console.log(`      ${pc.dim(cap.description)}`);
     }
     console.log();
   }
 
-  console.log(chalk.bold("Tier presets:"));
+  console.log(pc.bold(i18n.t("config.features.tierPresets")));
   for (const tier of ["starter", "complete", "pro", "enterprise"]) {
-    console.log(`  ${chalk.white(tier.padEnd(12))}`);
+    console.log(`  ${pc.white(tier.padEnd(12))}`);
   }
   console.log();
 }
@@ -78,27 +86,22 @@ async function applyTierDirect(tier: FeatureTier, outputPath: string, options: F
 }
 
 async function runInteractive(outputPath: string, options: FeaturesOptions): Promise<void> {
-  const { select, confirm, input } = await import("@inquirer/prompts");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const prompts = require("@inquirer/prompts") as {
-    checkbox: <T = string>(opts: { message: string; choices: Array<{ name: string; value: T; checked?: boolean }> }) => Promise<T[]>;
-  };
-  const checkbox = prompts.checkbox;
+  const i18n = await I18nService.getInstance();
 
   console.log();
-  console.log(chalk.bold.underline("🛡️ Kaven Feature Flag Configuration"));
+  console.log(pc.bold(pc.underline(i18n.t("config.features.tuiHeader"))));
 
   const selectedTier = await select({
-    message: "Select a base tier:",
-    choices: [
-      { name: "Starter (Essential SaaS features)", value: "starter" },
-      { name: "Complete (White-label + Custom Domains)", value: "complete" },
-      { name: "Pro (Extended API + Limits)", value: "pro" },
-      { name: "Enterprise (Unlimited everything)", value: "enterprise" },
-      { name: "Cancel", value: "cancel" },
+    message: i18n.t("config.features.selectTier"),
+    options: [
+      { label: "Starter — Essential SaaS features", value: "starter" },
+      { label: "Complete — White-label + Custom Domains", value: "complete" },
+      { label: "Pro — Extended API + Limits", value: "pro" },
+      { label: "Enterprise — Unlimited everything", value: "enterprise" },
+      { label: pc.dim(i18n.t("common.cancel")), value: "cancel" },
     ],
   });
-
+  handleCancel(selectedTier);
   if (selectedTier === "cancel") return;
 
   const tier = selectedTier as FeatureTier;
@@ -106,9 +109,10 @@ async function runInteractive(outputPath: string, options: FeaturesOptions): Pro
   const selections: Record<string, string | boolean> = {};
 
   const customize = await confirm({
-    message: "Customize individual capabilities?",
-    default: false,
+    message: i18n.t("config.features.customize"),
+    initialValue: false,
   });
+  handleCancel(customize);
 
   if (!customize) {
     return applyTierDirect(tier, outputPath, options);
@@ -121,29 +125,35 @@ async function runInteractive(outputPath: string, options: FeaturesOptions): Pro
     const numCaps = caps.filter(c => c.type === "numeric");
 
     if (boolCaps.length > 0) {
-      const choices = boolCaps.map(c => ({
-        name: `${c.key.padEnd(30)} — ${c.description}`,
-        value: c.key,
-        checked: tier === "enterprise" ? true : (defaults[c.key] === true),
-      }));
+      const initialValues = boolCaps
+        .filter(c => tier === "enterprise" || defaults[c.key] === true)
+        .map(c => c.key);
 
-      const selected = await checkbox({
+      const selected = await multiselect({
         message: `${category} features:`,
-        choices,
+        options: boolCaps.map(c => ({
+          label: `${c.key.padEnd(30)} — ${c.description}`,
+          value: c.key,
+        })),
+        initialValues,
+        required: false,
       });
+      handleCancel(selected);
 
       for (const cap of boolCaps) {
-        selections[cap.key] = selected.includes(cap.key);
+        selections[cap.key] = (selected as string[]).includes(cap.key);
       }
     }
 
     for (const cap of numCaps) {
       const defVal = tier === "enterprise" ? "-1" : (defaults[cap.key] as string || cap.defaultValue);
-      const val = await input({
+      const val = await text({
         message: `${cap.key} (${cap.description}):`,
-        default: defVal,
+        placeholder: defVal,
+        defaultValue: defVal,
       });
-      selections[cap.key] = val;
+      handleCancel(val);
+      selections[cap.key] = val as string;
     }
   }
 
@@ -151,6 +161,8 @@ async function runInteractive(outputPath: string, options: FeaturesOptions): Pro
 }
 
 async function saveSeedFile(selections: Record<string, string | boolean>, outputPath: string, options: FeaturesOptions, tier: string): Promise<void> {
+  const i18n = await I18nService.getInstance();
+
   const items = ALL_CAPABILITIES.map(c => {
     const val = selections[c.key];
     return `    { key: "${c.key}", type: "${c.type}", defaultValue: "${val}", description: "${c.description}" },`;
@@ -180,23 +192,23 @@ ${items}
 `;
 
   if (options.dryRun) {
-    console.log(chalk.bold("\n--- DRY RUN: Generated Content ---"));
+    console.log(pc.bold("\n" + i18n.t("config.features.dryRunHeader")));
     console.log(content);
     return;
   }
 
   if (fs.existsSync(outputPath) && !options.force) {
-    const { confirm: confirmOverwrite } = await import("@inquirer/prompts");
-    const overwrite = await confirmOverwrite({
-      message: "Seed file already exists. Overwrite?",
-      default: false,
+    const overwrite = await confirm({
+      message: i18n.t("config.features.confirmOverwrite"),
+      initialValue: false,
     });
+    handleCancel(overwrite);
     if (!overwrite) return;
   }
 
   await fs.ensureDir(path.dirname(outputPath));
   await fs.writeFile(outputPath, content, "utf-8");
 
-  console.log(chalk.green(`\n✅ Seed file written to: ${outputPath}`));
-  console.log(chalk.gray("Run pnpm prisma db seed to apply capabilities to your database."));
+  console.log(pc.green(`\n✅ ${i18n.t("config.features.seedWritten", { path: outputPath })}`));
+  console.log(pc.dim(i18n.t("config.features.runSeed")));
 }

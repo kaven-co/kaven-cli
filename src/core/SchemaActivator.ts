@@ -45,7 +45,7 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     description: "Faturamento, assinaturas e pagamentos",
     models: ["Invoice", "Order", "Subscription", "Plan", "Payment", "Product"],
     enums: [],
-    dependsOn: [],
+    dependsOn: ["auth"],
   },
   {
     id: "projects",
@@ -53,7 +53,7 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     description: "Gestão de projetos e tasks",
     models: ["Project", "Task"],
     enums: ["ProjectStatus", "TaskStatus", "TaskPriority"],
-    dependsOn: [],
+    dependsOn: ["auth"],
   },
   {
     id: "notifications",
@@ -61,7 +61,7 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     description: "Notificações e preferências de usuário",
     models: ["Notification", "UserPreference"],
     enums: [],
-    dependsOn: [],
+    dependsOn: ["auth"],
   },
   {
     id: "marketing-tracking",
@@ -69,7 +69,7 @@ export const KAVEN_MODULES: KavenModuleDef[] = [
     description: "Observabilidade de anúncios, GTM, GA4 e Meta CAPI",
     models: ["TrackingEvent"],
     enums: ["TrackingSource"],
-    dependsOn: [],
+    dependsOn: ["auth"],
   },
 ];
 

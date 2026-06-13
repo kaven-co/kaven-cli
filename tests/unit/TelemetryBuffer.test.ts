@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
@@ -27,9 +32,9 @@ describe("TelemetryBuffer", () => {
     telemetry.capture("test.event", { foo: "bar" });
     
     // @ts-ignore - access private buffer for assertion
-    expect(telemetry.buffer.length).toBe(1);
+    assert.strictEqual(telemetry.buffer.length, 1);
     // @ts-ignore
-    expect(telemetry.buffer[0].event).toBe("test.event");
+    assert.strictEqual(telemetry.buffer[0].event, "test.event");
   });
 
   it("deve persistir eventos ao chamar flush", async () => {
@@ -38,11 +43,11 @@ describe("TelemetryBuffer", () => {
     await telemetry.flush();
 
     const exists = await fs.pathExists(logPath);
-    expect(exists).toBe(true);
+    assert.strictEqual(exists, true);
 
     const content = await fs.readFile(logPath, "utf8");
     const event = JSON.parse(content.trim());
-    expect(event.event).toBe("test.flush");
+    assert.strictEqual(event.event, "test.flush");
   });
 
   it("deve recuperar eventos recentes do arquivo", async () => {
@@ -52,8 +57,8 @@ describe("TelemetryBuffer", () => {
     await telemetry.flush();
 
     const events = await telemetry.getRecentEvents();
-    expect(events.length).toBe(2);
-    expect(events[0].event).toBe("event.2"); // Ordem reversa
-    expect(events[1].event).toBe("event.1");
+    assert.strictEqual(events.length, 2);
+    assert.strictEqual(events[0].event, "event.2"); // Ordem reversa
+    assert.strictEqual(events[1].event, "event.1");
   });
 });

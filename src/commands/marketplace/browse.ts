@@ -1,7 +1,8 @@
-import chalk from "chalk";
-import ora from "ora";
+import { select, spinner, outro, isCancel, cancel } from "@clack/prompts";
+import pc from "picocolors";
 import { AuthService } from "../../core/AuthService.js";
 import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
+import { I18nService } from "../../core/I18nService.js";
 import { marketplaceInstall } from "./install.js";
 import type { Module } from "../../types/marketplace.js";
 
@@ -18,24 +19,27 @@ interface BrowseState {
 
 function tierBadge(tier: string): string {
   switch (tier.toUpperCase()) {
-    case "FREE":
-      return chalk.gray("[FREE]");
-    case "STARTER":
-      return chalk.green("[STARTER]");
-    case "COMPLETE":
-      return chalk.yellow("[COMPLETE]");
-    case "PRO":
-      return chalk.magenta("[PRO]");
-    case "ENTERPRISE":
-      return chalk.cyan("[ENTERPRISE]");
-    default:
-      return chalk.gray(`[${tier}]`);
+    case "FREE":       return pc.dim("[FREE]");
+    case "STARTER":    return pc.green("[STARTER]");
+    case "COMPLETE":   return pc.yellow("[COMPLETE]");
+    case "PRO":        return pc.magenta("[PRO]");
+    case "ENTERPRISE": return pc.cyan("[ENTERPRISE]");
+    default:           return pc.dim(`[${tier}]`);
+  }
+}
+
+function handleCancel(value: unknown) {
+  if (isCancel(value)) {
+    cancel("Cancelled.");
+    process.exit(0);
   }
 }
 
 export async function marketplaceBrowse(): Promise<void> {
+  const i18n = await I18nService.getInstance();
   const authService = new AuthService();
   const client = new MarketplaceClient(authService);
+  const s = spinner();
 
   const state: BrowseState = {
     category: null,
@@ -44,46 +48,38 @@ export async function marketplaceBrowse(): Promise<void> {
     screen: "categories",
   };
 
-  const { select } = await import("@inquirer/prompts");
-
   while (state.screen !== "exit") {
     if (state.screen === "categories") {
-      // Step 1: Category selection
-      const spinner = ora("Loading categories...").start();
+      s.start(i18n.t("marketplace.browse.loadingCategories"));
       let categories: string[] = [];
       try {
         categories = await client.getCategories();
-        spinner.stop();
+        s.stop();
       } catch {
-        spinner.stop();
-        console.log(chalk.yellow("Could not load categories — showing all modules."));
+        s.stop(pc.yellow(i18n.t("marketplace.browse.categoryLoadFailed")));
       }
 
-      const categoryChoices = [
-        { name: "All modules", value: "__all__" },
-        ...categories.map((c) => ({ name: c, value: c })),
-        { name: chalk.red("Exit"), value: "__exit__" },
+      const categoryOptions = [
+        { label: i18n.t("marketplace.browse.allModules"), value: "__all__" },
+        ...categories.map((c) => ({ label: c, value: c })),
+        { label: pc.dim(i18n.t("common.exit")), value: "__exit__" },
       ];
 
       const selected = await select({
-        message: "Browse by category:",
-        choices: categoryChoices,
+        message: i18n.t("marketplace.browse.browseByCategory"),
+        options: categoryOptions,
       });
+      handleCancel(selected);
 
-      if (selected === "__exit__") {
-        state.screen = "exit";
-        break;
-      }
-
-      state.category = selected === "__all__" ? null : selected;
+      if (selected === "__exit__") { state.screen = "exit"; break; }
+      state.category = selected === "__all__" ? null : (selected as string);
       state.page = 1;
       state.screen = "list";
       continue;
     }
 
     if (state.screen === "list") {
-      // Step 2: Module listing with pagination
-      const spinner = ora("Loading modules...").start();
+      s.start(i18n.t("marketplace.browse.loadingModules"));
       let modules: Module[] = [];
       let totalPages = 1;
 
@@ -95,88 +91,58 @@ export async function marketplaceBrowse(): Promise<void> {
         });
         modules = result.data;
         totalPages = Math.ceil(result.total / PAGE_SIZE) || 1;
-        spinner.stop();
+        s.stop();
       } catch (error) {
-        spinner.stop();
-        console.error(
-          chalk.red(
-            `Error loading modules: ${error instanceof Error ? error.message : String(error)}`
-          )
-        );
+        s.stop(pc.red(i18n.t("marketplace.browse.errorLoadingModules", { error: error instanceof Error ? error.message : String(error) })));
         state.screen = "categories";
         continue;
       }
 
       if (modules.length === 0) {
-        console.log(
-          chalk.yellow(
-            `No modules found${state.category ? ` in category: ${state.category}` : ""}.`
-          )
-        );
+        console.log(pc.yellow(i18n.t("marketplace.browse.noModulesFound")));
         state.screen = "categories";
         continue;
       }
 
       const categoryLabel = state.category ? ` [${state.category}]` : "";
-      const pageLabel = totalPages > 1 ? ` (page ${state.page}/${totalPages})` : "";
+      const pageLabel = totalPages > 1 ? ` (${state.page}/${totalPages})` : "";
 
-      const moduleChoices = [
+      const moduleOptions = [
         ...modules.map((m) => ({
-          name: `${m.name} ${tierBadge(m.requiredTier ?? m.tier ?? "")} — ${m.description}`,
+          label: `${m.name} ${tierBadge(m.requiredTier ?? m.tier ?? "")}`,
+          hint: m.description,
           value: m.slug,
         })),
+        ...(state.page < totalPages ? [{ label: pc.cyan(i18n.t("marketplace.browse.nextPage")), value: "__next__" }] : []),
+        ...(state.page > 1 ? [{ label: pc.cyan(i18n.t("marketplace.browse.prevPage")), value: "__prev__" }] : []),
+        { label: pc.dim(i18n.t("marketplace.browse.backToCategories")), value: "__back__" },
+        { label: pc.dim(i18n.t("common.exit")), value: "__exit__" },
       ];
-
-      // Navigation options at bottom
-      if (state.page < totalPages) {
-        moduleChoices.push({ name: chalk.cyan("→ Next page"), value: "__next__" });
-      }
-      if (state.page > 1) {
-        moduleChoices.push({ name: chalk.cyan("← Previous page"), value: "__prev__" });
-      }
-      moduleChoices.push({ name: chalk.dim("↑ Back to categories"), value: "__back__" });
-      moduleChoices.push({ name: chalk.red("Exit"), value: "__exit__" });
 
       const selected = await select({
         message: `Modules${categoryLabel}${pageLabel}:`,
-        choices: moduleChoices,
+        options: moduleOptions,
       });
+      handleCancel(selected);
 
-      if (selected === "__exit__") {
-        state.screen = "exit";
-        break;
-      }
-      if (selected === "__back__") {
-        state.screen = "categories";
-        continue;
-      }
-      if (selected === "__next__") {
-        state.page++;
-        continue;
-      }
-      if (selected === "__prev__") {
-        state.page = Math.max(1, state.page - 1);
-        continue;
-      }
+      if (selected === "__exit__") { state.screen = "exit"; break; }
+      if (selected === "__back__") { state.screen = "categories"; continue; }
+      if (selected === "__next__") { state.page++; continue; }
+      if (selected === "__prev__") { state.page = Math.max(1, state.page - 1); continue; }
 
-      // Find selected module
       const module = modules.find((m) => m.slug === selected);
-      if (module) {
-        state.selectedModule = module;
-        state.screen = "detail";
-      }
+      if (module) { state.selectedModule = module; state.screen = "detail"; }
       continue;
     }
 
     if (state.screen === "detail" && state.selectedModule) {
       const m = state.selectedModule;
 
-      // Step 3: Module detail view
       console.log();
-      console.log(chalk.bold(`${m.name}`), tierBadge(m.requiredTier ?? m.tier ?? ""));
-      console.log(chalk.gray(`Version: ${m.latestVersion || "latest"}`));
+      console.log(pc.bold(m.name), tierBadge(m.requiredTier ?? m.tier ?? ""));
+      console.log(pc.dim(`Version: ${m.latestVersion || "latest"}`));
       if (m.installCount !== undefined) {
-        console.log(chalk.gray(`Installs: ${m.installCount.toLocaleString()}`));
+        console.log(pc.dim(`Installs: ${m.installCount.toLocaleString()}`));
       }
       if (m.description) {
         console.log();
@@ -185,36 +151,25 @@ export async function marketplaceBrowse(): Promise<void> {
       console.log();
 
       const action = await select({
-        message: "What would you like to do?",
-        choices: [
-          { name: `Install ${m.name}`, value: "install" },
-          { name: "Back to module list", value: "back" },
-          { name: chalk.red("Exit"), value: "exit" },
+        message: i18n.t("marketplace.browse.whatToDo"),
+        options: [
+          { label: i18n.t("marketplace.browse.install", { name: m.name }), value: "install" },
+          { label: pc.dim(i18n.t("marketplace.browse.backToList")), value: "back" },
+          { label: pc.dim(i18n.t("common.exit")), value: "exit" },
         ],
       });
+      handleCancel(action);
 
-      if (action === "exit") {
-        state.screen = "exit";
-        break;
-      }
-      if (action === "back") {
-        state.selectedModule = null;
-        state.screen = "list";
-        continue;
-      }
+      if (action === "exit") { state.screen = "exit"; break; }
+      if (action === "back") { state.selectedModule = null; state.screen = "list"; continue; }
       if (action === "install") {
         console.log();
-        await marketplaceInstall(m.slug, {
-          force: false,
-          skipEnv: false,
-        });
+        await marketplaceInstall(m.slug, { force: false, skipEnv: false });
         state.screen = "exit";
         break;
       }
     }
   }
 
-  if (state.screen === "exit") {
-    console.log(chalk.gray("Browse session ended."));
-  }
+  outro(pc.dim(i18n.t("marketplace.browse.sessionEnded")));
 }

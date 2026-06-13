@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
@@ -19,41 +24,41 @@ describe("ProjectInitializer", () => {
 
   afterEach(async () => {
     await fs.remove(testDir);
-    vi.restoreAllMocks();
+
   });
 
   // Name validation tests
   describe("validateName", () => {
     it("rejects names with spaces", () => {
       const result = initializer.validateName("my project");
-      expect(result.valid).toBe(false);
-      expect(result.reason).toMatch(/space/i);
+      assert.strictEqual(result.valid, false);
+      assert.match(result.reason, /space/i);
     });
 
     it("rejects empty names", () => {
       const result = initializer.validateName("");
-      expect(result.valid).toBe(false);
+      assert.strictEqual(result.valid, false);
     });
 
     it("rejects names with uppercase letters", () => {
       const result = initializer.validateName("MyProject");
-      expect(result.valid).toBe(false);
+      assert.strictEqual(result.valid, false);
     });
 
     it("rejects names with special characters", () => {
       const result = initializer.validateName("my_project!");
-      expect(result.valid).toBe(false);
+      assert.strictEqual(result.valid, false);
     });
 
     it("accepts valid lowercase-hyphen names", () => {
-      expect(initializer.validateName("my-project").valid).toBe(true);
-      expect(initializer.validateName("myproject123").valid).toBe(true);
-      expect(initializer.validateName("my-saas-app").valid).toBe(true);
+      assert.strictEqual(initializer.validateName("my-project").valid, true);
+      assert.strictEqual(initializer.validateName("myproject123").valid, true);
+      assert.strictEqual(initializer.validateName("my-saas-app").valid, true);
     });
 
     it("rejects whitespace-only names", () => {
       const result = initializer.validateName("   ");
-      expect(result.valid).toBe(false);
+      assert.strictEqual(result.valid, false);
     });
   });
 
@@ -67,14 +72,14 @@ describe("ProjectInitializer", () => {
       await initializer.removeGitDir(projectDir);
 
       const exists = await fs.pathExists(path.join(projectDir, ".git"));
-      expect(exists).toBe(false);
+      assert.strictEqual(exists, false);
     });
 
     it("does not throw if .git does not exist", async () => {
       const projectDir = path.join(testDir, "no-git-dir");
       await fs.ensureDir(projectDir);
 
-      await expect(initializer.removeGitDir(projectDir)).resolves.not.toThrow();
+      await assert.doesNotReject(async () => { await initializer.removeGitDir(projectDir); });
     });
   });
 
@@ -97,7 +102,7 @@ describe("ProjectInitializer", () => {
       });
 
       const pkg = await fs.readJson(path.join(projectDir, "package.json"));
-      expect(pkg.name).toBe("test-app");
+      assert.strictEqual(pkg.name, "test-app");
     });
 
     it("replaces DATABASE_URL in .env.example", async () => {
@@ -120,8 +125,8 @@ describe("ProjectInitializer", () => {
         path.join(projectDir, ".env.example"),
         "utf-8"
       );
-      expect(content).toContain("postgresql://user:pass@localhost:5432/mydb");
-      expect(content).not.toContain("{{DATABASE_URL}}");
+      assert.ok(content.includes("postgresql://user:pass@localhost:5432/mydb"));
+      assert.ok(!content.includes("{{DATABASE_URL}}"));
     });
 
     it("skips files that do not exist", async () => {
@@ -129,7 +134,7 @@ describe("ProjectInitializer", () => {
       await fs.ensureDir(projectDir);
 
       // Should not throw even if no files exist
-      await expect(
+      await assert.doesNotReject(async () => { await 
         initializer.replacePlaceholders(projectDir, {
           projectName: "empty-app",
           dbUrl: "postgresql://localhost/db",
@@ -137,7 +142,7 @@ describe("ProjectInitializer", () => {
           locale: "en-US",
           currency: "USD",
         })
-      ).resolves.not.toThrow();
+      ; });
     });
   });
 });

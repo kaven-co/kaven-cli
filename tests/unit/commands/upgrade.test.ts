@@ -1,10 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
 import fs from "fs-extra";
 import path from "path";
 import os from "os";
 
 // Mock the MarketplaceClient and open module at module level
-vi.mock("open", () => ({ default: vi.fn().mockResolvedValue(undefined) }));
+
 
 describe("upgradeCommand", () => {
   let tempDir: string;
@@ -25,13 +30,13 @@ describe("upgradeCommand", () => {
 
   afterEach(async () => {
     await fs.remove(tempDir);
-    vi.restoreAllMocks();
+
   });
 
   it("should prevent upgrade when license is missing", async () => {
     // No license.json file written — license is absent
     const licenseExists = await fs.pathExists(licenseJsonPath);
-    expect(licenseExists).toBe(false);
+    assert.strictEqual(licenseExists, false);
   });
 
   it("should load license key from license.json", async () => {
@@ -39,7 +44,7 @@ describe("upgradeCommand", () => {
     await fs.writeJson(licenseJsonPath, { key: licenseKey, tier: "complete" });
 
     const data = await fs.readJson(licenseJsonPath);
-    expect(data.key).toBe(licenseKey);
+    assert.strictEqual(data.key, licenseKey);
   });
 
   it("should save updated tier to license.json after upgrade", async () => {
@@ -51,15 +56,15 @@ describe("upgradeCommand", () => {
     await fs.writeJson(licenseJsonPath, { ...existing, tier: "complete" });
 
     const updated = await fs.readJson(licenseJsonPath);
-    expect(updated.tier).toBe("complete");
-    expect(updated.key).toBe(licenseKey); // key preserved
+    assert.strictEqual(updated.tier, "complete");
+    assert.strictEqual(updated.key, licenseKey); // key preserved
   });
 
   it("should return null for missing license key", async () => {
     // File exists but has no 'key' field
     await fs.writeJson(licenseJsonPath, { tier: "free" });
     const data = await fs.readJson(licenseJsonPath);
-    expect(data.key || null).toBeNull();
+    assert.strictEqual(data.key || null, null);
   });
 
   it("checkout status 'pending' should not resolve immediately", () => {
@@ -68,21 +73,21 @@ describe("upgradeCommand", () => {
     let index = 0;
     const getStatus = () => statuses[index++] || "pending";
 
-    expect(getStatus()).toBe("pending");
-    expect(getStatus()).toBe("pending");
-    expect(getStatus()).toBe("confirmed");
+    assert.strictEqual(getStatus(), "pending");
+    assert.strictEqual(getStatus(), "pending");
+    assert.strictEqual(getStatus(), "confirmed");
   });
 
   it("checkout status 'cancelled' should abort gracefully", () => {
     const status = "cancelled";
-    expect(status).toBe("cancelled");
+    assert.strictEqual(status, "cancelled");
     // Not an error status — just user cancellation
   });
 
   it("should handle 'failed' checkout status as error", () => {
     const status = "failed";
-    expect(["pending", "confirmed", "cancelled", "failed"]).toContain(status);
-    expect(status).toBe("failed");
+    assert.ok(["pending", "confirmed", "cancelled", "failed"].includes(status));
+    assert.strictEqual(status, "failed");
   });
 
   it("MAX_POLLS constant ensures 10-minute timeout", () => {
@@ -90,6 +95,6 @@ describe("upgradeCommand", () => {
     const POLL_INTERVAL_MS = 5_000;
     const MAX_POLLS = 120;
     const maxDurationMs = POLL_INTERVAL_MS * MAX_POLLS;
-    expect(maxDurationMs).toBe(600_000); // 10 minutes in ms
+    assert.strictEqual(maxDurationMs, 600_000); // 10 minutes in ms
   });
 });

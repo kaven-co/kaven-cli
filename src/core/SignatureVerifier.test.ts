@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import path from "node:path";
+import { before, describe, it } from 'node:test';
+import assert from 'node:assert';
 import crypto from "crypto";
 import fs from "fs-extra";
 import path from "path";
@@ -16,7 +18,7 @@ describe("SignatureVerifier", () => {
   let publicKeyBase64: string;
   let tempDir: string;
 
-  beforeAll(async () => {
+  before(async () => {
     const keyPair = crypto.generateKeyPairSync("ed25519");
     privateKey = keyPair.privateKey;
     publicKey = keyPair.publicKey;
@@ -40,7 +42,7 @@ describe("SignatureVerifier", () => {
         .createHash("sha256")
         .update(content)
         .digest("hex");
-      expect(checksum).toBe(expected);
+      assert.strictEqual(checksum, expected);
     });
 
     it("returns different checksums for different content", async () => {
@@ -51,7 +53,7 @@ describe("SignatureVerifier", () => {
 
       const checksum1 = await computeFileChecksum(file1);
       const checksum2 = await computeFileChecksum(file2);
-      expect(checksum1).not.toBe(checksum2);
+      assert.notStrictEqual(checksum1, checksum2);
     });
   });
 
@@ -70,7 +72,7 @@ describe("SignatureVerifier", () => {
         signatureHex,
         publicKeyBase64
       );
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     it("returns true for valid base64 signature", () => {
@@ -87,7 +89,7 @@ describe("SignatureVerifier", () => {
         signatureBase64,
         publicKeyBase64
       );
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     it("returns true when signature was made with trailing newline", () => {
@@ -103,7 +105,7 @@ describe("SignatureVerifier", () => {
         signature.toString("base64"),
         publicKeyBase64
       );
-      expect(result).toBe(true);
+      assert.strictEqual(result, true);
     });
 
     it("returns false for tampered checksum", () => {
@@ -120,7 +122,7 @@ describe("SignatureVerifier", () => {
         signatureHex,
         publicKeyBase64
       );
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
 
     it("returns false for wrong public key", () => {
@@ -145,7 +147,7 @@ describe("SignatureVerifier", () => {
         signatureHex,
         otherPubBase64
       );
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
 
     it("returns false for invalid public key data", () => {
@@ -154,7 +156,7 @@ describe("SignatureVerifier", () => {
         "aabbccdd",
         "not-a-valid-base64-key!!!"
       );
-      expect(result).toBe(false);
+      assert.strictEqual(result, false);
     });
   });
 
@@ -174,14 +176,12 @@ describe("SignatureVerifier", () => {
         privateKey
       );
 
-      await expect(
-        verifyDownload({
+      await verifyDownload({
           filePath,
           expectedChecksum: checksum,
           signature: signature.toString("hex"),
           publicKeyBase64,
-        })
-      ).resolves.toBeUndefined();
+        });
     });
 
     it("succeeds with base64 signature", async () => {
@@ -199,14 +199,13 @@ describe("SignatureVerifier", () => {
         privateKey
       );
 
-      await expect(
-        verifyDownload({
-          filePath,
-          expectedChecksum: checksum,
-          signature: signature.toString("base64"),
-          publicKeyBase64,
-        })
-      ).resolves.toBeUndefined();
+      await verifyDownload({
+        filePath,
+        expectedChecksum: checksum,
+        signature: signature.toString("base64"),
+        publicKeyBase64,
+      });
+
     });
 
     it("succeeds when signature has trailing newline", async () => {
@@ -224,14 +223,13 @@ describe("SignatureVerifier", () => {
         privateKey
       );
 
-      await expect(
-        verifyDownload({
+      await verifyDownload({
           filePath,
           expectedChecksum: checksum,
           signature: signature.toString("base64"),
           publicKeyBase64,
         })
-      ).resolves.toBeUndefined();
+
     });
 
     it("throws on checksum mismatch", async () => {
@@ -245,23 +243,23 @@ describe("SignatureVerifier", () => {
         privateKey
       );
 
-      await expect(
-        verifyDownload({
+      await assert.rejects(async () => {
+        await verifyDownload({
           filePath,
           expectedChecksum: fakeChecksum,
           signature: signature.toString("hex"),
           publicKeyBase64,
-        })
-      ).rejects.toThrow(SignatureVerificationError);
+        });
+      }, (err) => err instanceof SignatureVerificationError);
 
-      await expect(
-        verifyDownload({
+      await assert.rejects(async () => {
+        await verifyDownload({
           filePath,
           expectedChecksum: fakeChecksum,
           signature: signature.toString("hex"),
           publicKeyBase64,
-        })
-      ).rejects.toThrow(/Checksum mismatch/);
+        });
+      }, { message: /Checksum mismatch/ });
     });
 
     it("throws on invalid signature with correct checksum", async () => {
@@ -281,23 +279,23 @@ describe("SignatureVerifier", () => {
         otherKey.privateKey
       );
 
-      await expect(
-        verifyDownload({
+      await assert.rejects(async () => {
+        await verifyDownload({
           filePath,
           expectedChecksum: checksum,
           signature: wrongSignature.toString("hex"),
           publicKeyBase64,
         })
-      ).rejects.toThrow(SignatureVerificationError);
+      ; }, { name: 'SignatureVerificationError' });
 
-      await expect(
-        verifyDownload({
+      await assert.rejects(async () => {
+        await verifyDownload({
           filePath,
           expectedChecksum: checksum,
           signature: wrongSignature.toString("base64"),
           publicKeyBase64,
-        })
-      ).rejects.toThrow(/signature verification failed/i);
+        });
+      }, { message: /Ed25519 signature verification failed/i });
     });
   });
 });

@@ -1,4 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { fileURLToPath } from "node:url";
+import path, { dirname } from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+
+
 import { ManifestParser } from "../../src/core/ManifestParser.js";
 import path from "path";
 
@@ -13,12 +20,12 @@ describe("ManifestParser with real module", () => {
 
     const manifest = await parser.parse(manifestPath);
 
-    expect(manifest.name).toBe("payments");
-    expect(manifest.version).toBe("1.0.0");
-    expect(manifest.dependencies.npm).toHaveLength(2);
-    expect(manifest.injections).toHaveLength(2);
-    expect(manifest.env).toHaveLength(2);
-    expect(manifest.scripts.postInstall).toContain("db:migrate");
+    assert.strictEqual(manifest.name, "payments");
+    assert.strictEqual(manifest.version, "1.0.0");
+    assert.strictEqual(manifest.dependencies.npm.length, 2);
+    assert.strictEqual(manifest.injections.length, 2);
+    assert.strictEqual(manifest.env.length, 2);
+    assert.ok(manifest.scripts.postInstall.includes("db:migrate"));
   });
 
   it("should validate payments module", async () => {
@@ -29,7 +36,7 @@ describe("ManifestParser with real module", () => {
 
     const result = await parser.validate(manifestPath);
 
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
+    assert.strictEqual(result.valid, true);
+    assert.strictEqual(result.errors.length, 0);
   });
 });
