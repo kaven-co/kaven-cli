@@ -25,6 +25,7 @@ Built for precision and speed, it is now a **Pure ESM** tool optimized for moder
   - [Schema Activation Engine (`module`)](#schema-activation-engine-module)
   - [Feature Flags & Capabilities (`config features`)](#feature-flags--capabilities-config-features)
   - [Marketplace Integration](#marketplace-integration)
+  - [Update & Upgrade](#update--upgrade)
 - [Architecture Deep Dive](#architecture-deep-dive)
   - [Schema Activation Logic](#schema-activation-logic)
   - [AIOX Squad Integration](#aiox-squad-integration)
@@ -153,6 +154,40 @@ kaven marketplace list --category auth
 
 ---
 
+### Update & Upgrade
+
+Kaven follows the Linux `apt` convention — **update** manages software versions, **upgrade** manages your plan.
+
+#### `kaven update` — Update CLI and modules
+
+```bash
+kaven update              # check for updates: CLI + all installed modules
+kaven update --core       # check and update CLI only
+kaven update --module X   # update a specific installed module
+kaven update --all        # apply all available updates
+kaven update --check      # check without applying (dry run)
+```
+
+> Works offline: uses local MSW handlers when marketplace is unreachable.
+
+#### `kaven module update` — Update a specific module (C4.1)
+
+```bash
+kaven module update payments          # update to latest
+kaven module update payments@1.0.3    # update to specific version
+```
+
+#### `kaven upgrade` — License plan upgrade only
+
+```bash
+kaven upgrade             # opens Stripe checkout to upgrade your plan tier
+kaven upgrade check       # check if a newer CLI version is on npm
+```
+
+> `kaven upgrade` is **not** for updating software. It is exclusively for moving between Starter → Complete → Pro license tiers via Stripe.
+
+---
+
 ## Architecture Deep Dive
 
 ### Schema Activation Logic
@@ -227,7 +262,7 @@ git clone https://github.com/kaven-co/kaven-cli
 cd kaven-cli
 pnpm install
 
-# 2. Run the full test suite (318+ tests)
+# 2. Run the full test suite (334 tests)
 pnpm test
 
 # 3. Run linting and type-checking
