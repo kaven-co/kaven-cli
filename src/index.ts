@@ -20,6 +20,7 @@ import { telemetryView } from "./commands/telemetry/view.js";
 import { buildLicenseCommand } from "./commands/license/index.js";
 import { initProject } from "./commands/init/index.js";
 import { upgradeCommand, upgradeCheck, upgradeInstall } from "./commands/upgrade/index.js";
+import { updateCommand } from "./commands/update/index.js";
 import { cacheStatus, cacheClear } from "./commands/cache/index.js";
 import { configSet, configGet, configView, configReset } from "./commands/config/index.js";
 import { configFeatures, type FeatureTier } from "./commands/config/features.js";
@@ -377,18 +378,54 @@ Supports category filtering and pagination.
     .action(() => marketplaceBrowse());
 
   /**
-   * Upgrade Group — License tier upgrades and CLI updates
+   * Update — Check and apply updates for CLI core and installed modules
+   * Analogous to `apt update` / `brew update`
    */
-  const upgradeCommandGroup = program
-    .command("upgrade")
-    .description("Upgrade your license tier or CLI version")
+  program
+    .command("update")
+    .description("Check and apply updates for CLI and installed modules")
+    .option("--core", "Update only the CLI itself")
+    .option("--module <slug>", "Update a specific installed module")
+    .option("--all", "Apply all available updates (CLI + modules)")
+    .option("--check", "Check for updates without applying")
+    .option("--skip-verify", "Skip Ed25519 signature verification (dev only)")
     .addHelpText(
       "after",
       `
 Examples:
-  $ kaven upgrade                  Upgrade license tier
-  $ kaven upgrade check            Check for CLI updates
-  $ kaven upgrade install          Install latest CLI version
+  $ kaven update                   Check all updates (CLI + modules)
+  $ kaven update --core            Check/apply CLI update only
+  $ kaven update --module payments Update the payments module
+  $ kaven update --all             Apply all updates
+  $ kaven update --check           List updates without applying
+`
+    )
+    .action((opts) =>
+      updateCommand({
+        core: opts.core,
+        module: opts.module,
+        all: opts.all,
+        check: opts.check,
+        skipVerify: opts.skipVerify,
+      })
+    );
+
+  /**
+   * Upgrade Group — License plan upgrades (kaven upgrade → Stripe checkout)
+   * Analogous to `apt upgrade` but for license tier
+   */
+  const upgradeCommandGroup = program
+    .command("upgrade")
+    .description("Upgrade your Kaven license plan")
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ kaven upgrade                  Upgrade license tier (interactive)
+  $ kaven upgrade check            Check current license status
+  $ kaven upgrade install          Force install latest CLI (manual)
+
+Note: To update the CLI or modules, use \`kaven update\` instead.
 `
     );
 
@@ -404,12 +441,12 @@ Examples:
 
   upgradeCommandGroup
     .command("check")
-    .description("Check for Kaven CLI updates")
+    .description("Check current license status")
     .action(() => upgradeCheck());
 
   upgradeCommandGroup
     .command("install")
-    .description("Install the latest Kaven CLI version")
+    .description("Force install the latest Kaven CLI version globally")
     .action(() => upgradeInstall());
 
   /**
