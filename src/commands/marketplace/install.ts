@@ -22,6 +22,7 @@ import {
 import { verifyDownload } from "../../core/SignatureVerifier.js";
 import type { ModuleManifest } from "../../core/ModuleInstaller.js";
 import { cacheBaseline } from "../../core/ModuleCache.js";
+import { canInstall, tierDisplayName } from "../../utils/tier.utils.js";
 
 export interface MarketplaceInstallOptions {
   version?: string;
@@ -29,6 +30,7 @@ export interface MarketplaceInstallOptions {
   skipEnv?: boolean;
   envFile?: string;
   skipVerify?: boolean;
+  skipTierCheck?: boolean;
 }
 
 /** Create a unique temp directory for this install session. */
@@ -104,6 +106,36 @@ export async function marketplaceInstall(
       );
       process.exit(1);
       return;
+    }
+
+    // 2.5 Tier gate — verify user plan before downloading
+    if (!options.skipTierCheck) {
+      const auth = await authService.getAuth();
+      const userTier = auth?.user?.tier ?? "starter";
+      const moduleTier = moduleData.requiredTier ?? moduleData.tier;
+
+      if (!canInstall(userTier, moduleTier)) {
+        spinner.stop();
+        console.error(
+          chalk.red(
+            `\n✗ This module requires a ${tierDisplayName(moduleTier)} plan or higher.`
+          )
+        );
+        console.error(
+          chalk.yellow(`  Your current plan: ${tierDisplayName(userTier)}`)
+        );
+        console.error(
+          chalk.dim(`  Upgrade: https://kaven.site/pricing\n`)
+        );
+        telemetry.capture(
+          "cli.marketplace.install.error",
+          { slug, error: "tier_insufficient", userTier, moduleTier },
+          Date.now() - startTime
+        );
+        await telemetry.flush();
+        process.exit(1);
+        return;
+      }
     }
 
     // 3. Check for conflict before downloading

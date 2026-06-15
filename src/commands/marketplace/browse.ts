@@ -5,6 +5,7 @@ import { MarketplaceClient } from "../../infrastructure/MarketplaceClient.js";
 import { I18nService } from "../../core/I18nService.js";
 import { marketplaceInstall } from "./install.js";
 import type { Module } from "../../types/marketplace.js";
+import { canInstall } from "../../utils/tier.utils.js";
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +41,10 @@ export async function marketplaceBrowse(): Promise<void> {
   const authService = new AuthService();
   const client = new MarketplaceClient(authService);
   const s = spinner();
+
+  // Resolve user tier once for the session (defaults to "starter" if not logged in)
+  const authData = await authService.getAuth();
+  const userTier = authData?.user?.tier ?? "starter";
 
   const state: BrowseState = {
     category: null,
@@ -108,11 +113,17 @@ export async function marketplaceBrowse(): Promise<void> {
       const pageLabel = totalPages > 1 ? ` (${state.page}/${totalPages})` : "";
 
       const moduleOptions = [
-        ...modules.map((m) => ({
-          label: `${m.name} ${tierBadge(m.requiredTier ?? m.tier ?? "")}`,
-          hint: m.description,
-          value: m.slug,
-        })),
+        ...modules.map((m) => {
+          const moduleTier = m.requiredTier ?? m.tier ?? "";
+          const locked = moduleTier && !canInstall(userTier, moduleTier);
+          const badge = tierBadge(moduleTier);
+          const lockIcon = locked ? pc.red(" 🔒") : "";
+          return {
+            label: `${m.name} ${badge}${lockIcon}`,
+            hint: m.description,
+            value: m.slug,
+          };
+        }),
         ...(state.page < totalPages ? [{ label: pc.cyan(i18n.t("marketplace.browse.nextPage")), value: "__next__" }] : []),
         ...(state.page > 1 ? [{ label: pc.cyan(i18n.t("marketplace.browse.prevPage")), value: "__prev__" }] : []),
         { label: pc.dim(i18n.t("marketplace.browse.backToCategories")), value: "__back__" },
@@ -137,9 +148,11 @@ export async function marketplaceBrowse(): Promise<void> {
 
     if (state.screen === "detail" && state.selectedModule) {
       const m = state.selectedModule;
+      const moduleTier = m.requiredTier ?? m.tier ?? "";
+      const isLocked = moduleTier && !canInstall(userTier, moduleTier);
 
       console.log();
-      console.log(pc.bold(m.name), tierBadge(m.requiredTier ?? m.tier ?? ""));
+      console.log(pc.bold(m.name), tierBadge(moduleTier), isLocked ? pc.red("🔒") : "");
       console.log(pc.dim(`Version: ${m.latestVersion || "latest"}`));
       if (m.installCount !== undefined) {
         console.log(pc.dim(`Installs: ${m.installCount.toLocaleString()}`));
@@ -147,6 +160,10 @@ export async function marketplaceBrowse(): Promise<void> {
       if (m.description) {
         console.log();
         console.log(m.description);
+      }
+      if (isLocked) {
+        console.log();
+        console.log(pc.yellow(`Requires a higher plan. Upgrade: https://kaven.site/pricing`));
       }
       console.log();
 

@@ -64,6 +64,8 @@ export const mockServer = setupServer(
       name: 'Payments',
       description: 'Stripe payment integration',
       category: 'billing',
+      tier: 'COMPLETE',
+      requiredTier: 'COMPLETE',
       latestVersion: '1.0.2',
       author: 'kaven',
       installCount: 2300,
