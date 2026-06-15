@@ -26,15 +26,36 @@ export interface InitPromptAnswers {
 const TEMPLATE_REPO = "https://github.com/kaven-co/kaven-template.git";
 const KAVEN_SQUAD_REPO = "https://github.com/bychrisr/kaven-squad";
 
+interface RunCommandOptions {
+  onData?: (chunk: string) => void;
+  timeoutMs?: number;
+  env?: NodeJS.ProcessEnv;
+}
+
 /** Run a shell command via spawn, returning exit code. */
 function runCommand(
   cmd: string,
   args: string[],
   cwd: string,
-  onData?: (chunk: string) => void
+  options: RunCommandOptions | ((chunk: string) => void) = {}
 ): Promise<number> {
+  const opts: RunCommandOptions = typeof options === "function" ? { onData: options } : options;
+  const { onData, timeoutMs, env } = opts;
+
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { cwd, stdio: onData ? "pipe" : "inherit" });
+    const proc = spawn(cmd, args, {
+      cwd,
+      stdio: onData ? "pipe" : "inherit",
+      env: { ...process.env, ...env },
+    });
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (timeoutMs) {
+      timer = setTimeout(() => {
+        proc.kill("SIGKILL");
+        resolve(1);
+      }, timeoutMs);
+    }
 
     if (onData && proc.stdout) {
       proc.stdout.on("data", (d: Buffer) => onData(d.toString()));
@@ -43,8 +64,8 @@ function runCommand(
       proc.stderr.on("data", (d: Buffer) => onData(d.toString()));
     }
 
-    proc.on("error", reject);
-    proc.on("close", (code) => resolve(code ?? 0));
+    proc.on("error", (err) => { clearTimeout(timer); reject(err); });
+    proc.on("close", (code) => { clearTimeout(timer); resolve(code ?? 0); });
   });
 }
 
@@ -188,10 +209,19 @@ export class ProjectInitializer {
     const exitCode = await runCommand(
       "git",
       ["clone", "--depth", "1", KAVEN_SQUAD_REPO, squadDir],
-      process.cwd()
+      process.cwd(),
+      {
+        // Prevent git from hanging on credential prompts when stdin is not a TTY
+        env: { GIT_TERMINAL_PROMPT: "0" },
+        timeoutMs: 30_000,
+      }
     );
 
     if (exitCode !== 0) {
+      // Clean up partial directory left by git before the failure
+      if (await fs.pathExists(squadDir)) {
+        await fs.remove(squadDir);
+      }
       return {
         installed: false,
         reason: `git clone exited with code ${exitCode}`,
@@ -216,8 +246,9 @@ export class ProjectInitializer {
   ): Promise<{ installed: boolean; reason?: string }> {
     const exitCode = await runCommand(
       'npx',
-      ['aiox-core@5.0.3', 'install', '--quiet'],
-      targetDir
+      ['aiox-core@latest', 'install', '--quiet'],
+      targetDir,
+      { timeoutMs: 120_000 }
     );
 
     if (exitCode !== 0) {
