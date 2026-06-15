@@ -9,6 +9,7 @@ export interface InitOptions {
   skipGit?: boolean;
   force?: boolean;
   withSquad?: boolean;
+  resume?: boolean;
   dbUrl?: string;
   emailProvider?: string;
   locale?: string;
@@ -239,14 +240,37 @@ export class ProjectInitializer {
 
   /**
    * Install AIOX Core runtime into the project via npx.
+   * Runs pre-flight checks before attempting install.
    * Non-fatal — if it fails, user gets instructions to run manually.
    */
   async installAIOXCore(
     targetDir: string
   ): Promise<{ installed: boolean; reason?: string }> {
+    // Pre-flight 1: Node >= 18
+    const nodeMajor = parseInt(process.version.slice(1).split(".")[0], 10);
+    if (nodeMajor < 18) {
+      return { installed: false, reason: `Node >= 18 required (current: ${process.version})` };
+    }
+
+    // Pre-flight 2: kaven-squad must be present and non-empty
+    const squadDir = path.join(targetDir, "squads", "kaven-squad");
+    if (!(await fs.pathExists(squadDir))) {
+      return { installed: false, reason: "kaven-squad not found — run squad install first" };
+    }
+    const squadFiles = await fs.readdir(squadDir);
+    if (squadFiles.length === 0) {
+      return { installed: false, reason: "kaven-squad directory is empty — squad install may have failed" };
+    }
+
+    // Pre-flight 3: skip if already installed
+    const aioxCorePath = path.join(targetDir, ".aiox-core");
+    if (await fs.pathExists(aioxCorePath)) {
+      return { installed: true, reason: "already-installed" };
+    }
+
     const exitCode = await runCommand(
-      'npx',
-      ['aiox-core@latest', 'install', '--quiet'],
+      "npx",
+      ["aiox-core@latest", "install", "--quiet"],
       targetDir,
       { timeoutMs: 120_000 }
     );

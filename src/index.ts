@@ -65,6 +65,7 @@ Support:       https://github.com/kaven-co/kaven-cli/issues
     .option("--template <path>", "Path to a local template or custom git repository URL")
     .option("--with-squad", "Install kaven-squad (AIOX) into squads/kaven-squad/ after scaffold")
     .option("--skip-aiox", "Skip AIOX environment bootstrap")
+    .option("--resume", "Resume an incomplete init from where it stopped")
     .addHelpText(
       "after",
       `
@@ -73,6 +74,7 @@ Examples:
   $ kaven init my-app --defaults    Use defaults (no prompts)
   $ kaven init my-app --skip-git   Skip git initialization
   $ kaven init my-app --with-squad  Install kaven-squad for AIOX integration
+  $ kaven init my-app --resume      Resume incomplete setup from last step
 `
     )
     .action((name, opts) =>
@@ -84,6 +86,7 @@ Examples:
         template: opts.template,
         withSquad: opts.withSquad,
         skipAiox: opts.skipAiox,
+        resume: opts.resume,
       })
     );
 

@@ -12,11 +12,40 @@ import { configManager } from "../../core/ConfigManager.js";
 import { I18nService, type Language } from "../../core/I18nService.js";
 import { getBrandingBanner } from "../../core/Branding.js";
 import { runEnvironmentBootstrap } from "./aiox-bootstrap.js";
+import { InitStateManager, type InitStep } from "../../core/InitStateManager.js";
 
 function handleCancel(value: unknown) {
   if (isCancel(value)) {
     cancel("Operation cancelled.");
     process.exit(0);
+  }
+}
+
+/** Execute a single init step, recording state before and after. */
+async function runStep(
+  stateManager: InitStateManager,
+  step: InitStep,
+  label: string,
+  fn: () => Promise<void>,
+  options: { fatal?: boolean } = {}
+): Promise<boolean> {
+  const s = spinner();
+  s.start(label);
+  try {
+    await fn();
+    await stateManager.markStep(step, "done");
+    s.stop(pc.green(`${label} ✓`));
+    return true;
+  } catch (error: unknown) {
+    await stateManager.markStep(step, "failed");
+    const msg = error instanceof Error ? error.message : String(error);
+    s.stop(pc.red(`${label} ✗`));
+    if (options.fatal) {
+      cancel(msg);
+      process.exit(1);
+    }
+    console.log(pc.dim(`  Error: ${msg}`));
+    return false;
   }
 }
 
@@ -26,7 +55,7 @@ export async function initProject(
 ): Promise<void> {
   const i18n = await I18nService.getInstance();
   const initializer = new ProjectInitializer();
-  
+
   // 1. Language First (P0) — Just like AIOX Wizard
   const selectedLang = await select({
     message: "🌐 Select Language / Selecione o Idioma:",
@@ -37,16 +66,15 @@ export async function initProject(
     initialValue: "en",
   }) as Language;
   handleCancel(selectedLang);
-  
+
   await i18n.setLanguage(selectedLang);
   await configManager.initialize();
   await configManager.set("language", selectedLang, "global");
 
-  // 2. Welcome Banner with chosen language
   console.log(getBrandingBanner());
   intro(pc.cyan(i18n.t("init.intro")));
 
-  // 3. Resolve Project Name
+  // 2. Resolve Project Name
   let name = projectName;
   if (!name) {
     if (options.defaults) {
@@ -66,8 +94,30 @@ export async function initProject(
 
   const targetDir = path.resolve(process.cwd(), name);
 
-  // Check if directory already exists
-  if ((await fs.pathExists(targetDir)) && !options.force) {
+  // 3. Detect incomplete previous init — offer to resume
+  const existingState = await InitStateManager.findIncomplete(targetDir);
+  if (existingState && !options.force) {
+    const resumePoint = existingState.getResumePoint();
+
+    // --resume flag skips the confirmation prompt
+    const shouldResume = options.resume
+      ? true
+      : await confirm({
+          message: pc.yellow(
+            `⚠  Incomplete init detected (stopped at: ${pc.bold(resumePoint ?? "unknown")}). Resume from here?`
+          ),
+          initialValue: true,
+        });
+
+    if (!options.resume) handleCancel(shouldResume);
+
+    if (shouldResume) {
+      await resumeInit(targetDir, existingState, initializer);
+      return;
+    }
+    // User chose not to resume — fall through to fresh init (--force equivalent)
+    options.force = true;
+  } else if ((await fs.pathExists(targetDir)) && !options.force) {
     cancel(pc.red(`Error: Directory "${name}" already exists. Use --force to overwrite.`));
     process.exit(1);
   }
@@ -125,99 +175,218 @@ export async function initProject(
     answers = { dbUrl: dbUrl as string, emailProvider, locale: locale as string, currency: currency as string };
   }
 
-  const s = spinner();
+  // 5. Initialize state tracker
+  const stateManager = new InitStateManager(targetDir);
+  await stateManager.create(name, { ...answers, projectName: name }, {
+    withSquad: options.withSquad,
+    skipInstall: options.skipInstall,
+    skipGit: options.skipGit,
+    skipAiox: options.skipAiox,
+    template: options.template,
+  });
 
-  // 5. Execution
-  s.start("Cloning kaven-template...");
-  try {
+  await executeInitSteps(targetDir, name, answers, stateManager, initializer, options);
+}
+
+/** Run all steps from the beginning (fresh init). */
+async function executeInitSteps(
+  targetDir: string,
+  name: string,
+  answers: InitPromptAnswers,
+  stateManager: InitStateManager,
+  initializer: ProjectInitializer,
+  options: InitOptions
+): Promise<void> {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  // Step: clone
+  await runStep(stateManager, "clone", "Cloning kaven-template...", async () => {
     await initializer.cloneTemplate(targetDir, options.template);
-    s.stop(pc.green("Template cloned"));
-  } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error(String(error));
-    s.stop(pc.red("Clone failed"));
-    cancel(err.message);
-    process.exit(1);
-  }
+  }, { fatal: true });
 
-  s.start("Configuring project...");
-  await initializer.removeGitDir(targetDir);
-  await initializer.replacePlaceholders(targetDir, { ...answers, projectName: name });
+  // Step: configure
+  await runStep(stateManager, "configure", "Configuring project...", async () => {
+    await initializer.removeGitDir(targetDir);
+    await initializer.replacePlaceholders(targetDir, { ...answers, projectName: name });
 
-  // 5.1 Inject Kaven Authority Rules (CLAUDE.md)
-  try {
     const claudePath = path.join(targetDir, ".claude", "CLAUDE.md");
     await fs.ensureDir(path.dirname(claudePath));
-    
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
     const templatePath = path.resolve(__dirname, "../../core/templates/CLAUDE.md.hbs");
-
     if (await fs.pathExists(templatePath)) {
-      const templateContent = await fs.readFile(templatePath, "utf-8");
-      const finalContent = templateContent.replace(
-        "${new Date().toLocaleDateString()}",
-        new Date().toLocaleDateString()
+      const content = await fs.readFile(templatePath, "utf-8");
+      await fs.writeFile(
+        claudePath,
+        content.replace("${new Date().toLocaleDateString()}", new Date().toLocaleDateString()),
+        "utf-8"
       );
-      await fs.writeFile(claudePath, finalContent, "utf-8");
     }
-  } catch (err) {
-    console.warn(pc.dim(`[init] CLAUDE.md injection skipped: ${err instanceof Error ? err.message : String(err)}`));
-  }
+  }, { fatal: true });
 
-  s.stop(pc.green("Project configured"));
-
+  // Step: install
   if (!options.skipInstall) {
-    s.start(i18n.t("init.installing"));
-    try {
+    await runStep(stateManager, "install", i18n_installing(), async () => {
       await initializer.runInstall(targetDir);
-      s.stop(pc.green("Dependencies installed"));
-    } catch {
-      s.stop(pc.yellow("pnpm install failed (skip)"));
-    }
+    });
+  } else {
+    await stateManager.markStep("install", "skipped");
   }
 
+  // Step: git
   if (!options.skipGit) {
-    s.start("Initializing git...");
-    try {
+    await runStep(stateManager, "git", "Initializing git...", async () => {
       await initializer.initGit(targetDir);
-      s.stop(pc.green("Git initialized"));
-    } catch {
-      s.stop(pc.yellow("Git init failed (skip)"));
-    }
+    });
+  } else {
+    await stateManager.markStep("git", "skipped");
   }
 
-  // 6. AI Squad
+  // Step: squad + aiox-core
   if (options.withSquad) {
-    s.start("Infecting AIOX intelligence...");
-    const squadResult = await initializer.installSquad(targetDir);
-    if (squadResult.installed) {
-      await initializer.installAIOXCore(targetDir);
-      s.stop(pc.green("Kaven Squad online 🤖"));
+    const squadOk = await runStep(stateManager, "squad", "Installing kaven-squad...", async () => {
+      const result = await initializer.installSquad(targetDir);
+      if (!result.installed) throw new Error(result.reason ?? "squad install failed");
+    });
+
+    if (squadOk) {
+      await runStep(stateManager, "aiox-core", "Installing AIOX Core...", async () => {
+        const result = await initializer.installAIOXCore(targetDir);
+        if (!result.installed) throw new Error(result.reason ?? "aiox-core install failed");
+      });
     } else {
-      s.stop(pc.yellow("AIOX bootstrap skipped or failed"));
+      await stateManager.markStep("aiox-core", "skipped");
+      console.log(pc.dim(`  To retry: cd ${name} && kaven init --resume`));
     }
+  } else {
+    await stateManager.markStep("squad", "skipped");
+    await stateManager.markStep("aiox-core", "skipped");
   }
 
-  // 7. Environment
-  await runEnvironmentBootstrap(targetDir, { skipAiox: options.skipAiox });
+  // Step: env-bootstrap
+  if (!options.skipAiox) {
+    await runStep(stateManager, "env-bootstrap", "Bootstrapping AIOX environment...", async () => {
+      await runEnvironmentBootstrap(targetDir, { skipAiox: false });
+    });
+  } else {
+    await stateManager.markStep("env-bootstrap", "skipped");
+  }
 
-  // 8. Summary
+  await finishInit(name, stateManager);
+}
+
+/** Resume from the last failed/pending step using saved state. */
+async function resumeInit(
+  targetDir: string,
+  stateManager: InitStateManager,
+  initializer: ProjectInitializer
+): Promise<void> {
+  const state = stateManager.getState();
+  const { answers, options, projectName: name } = state;
+
+  console.log(pc.cyan(`\nResuming init for ${pc.bold(name)}...\n`));
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  const shouldRun = (step: InitStep) => {
+    const status = state.steps[step];
+    return status === "pending" || status === "failed";
+  };
+
+  if (shouldRun("clone")) {
+    await runStep(stateManager, "clone", "Cloning kaven-template...", async () => {
+      await initializer.cloneTemplate(targetDir, options.template);
+    }, { fatal: true });
+  }
+
+  if (shouldRun("configure")) {
+    await runStep(stateManager, "configure", "Configuring project...", async () => {
+      await initializer.removeGitDir(targetDir);
+      await initializer.replacePlaceholders(targetDir, answers);
+      const claudePath = path.join(targetDir, ".claude", "CLAUDE.md");
+      await fs.ensureDir(path.dirname(claudePath));
+      const templatePath = path.resolve(__dirname, "../../core/templates/CLAUDE.md.hbs");
+      if (await fs.pathExists(templatePath)) {
+        const content = await fs.readFile(templatePath, "utf-8");
+        await fs.writeFile(
+          claudePath,
+          content.replace("${new Date().toLocaleDateString()}", new Date().toLocaleDateString()),
+          "utf-8"
+        );
+      }
+    }, { fatal: true });
+  }
+
+  if (shouldRun("install")) {
+    await runStep(stateManager, "install", "Installing dependencies...", async () => {
+      await initializer.runInstall(targetDir);
+    });
+  }
+
+  if (shouldRun("git")) {
+    await runStep(stateManager, "git", "Initializing git...", async () => {
+      await initializer.initGit(targetDir);
+    });
+  }
+
+  if (shouldRun("squad")) {
+    const squadOk = await runStep(stateManager, "squad", "Installing kaven-squad...", async () => {
+      const result = await initializer.installSquad(targetDir);
+      if (!result.installed) throw new Error(result.reason ?? "squad install failed");
+    });
+
+    if (squadOk && shouldRun("aiox-core")) {
+      await runStep(stateManager, "aiox-core", "Installing AIOX Core...", async () => {
+        const result = await initializer.installAIOXCore(targetDir);
+        if (!result.installed) throw new Error(result.reason ?? "aiox-core install failed");
+      });
+    }
+  } else if (shouldRun("aiox-core")) {
+    await runStep(stateManager, "aiox-core", "Installing AIOX Core...", async () => {
+      const result = await initializer.installAIOXCore(targetDir);
+      if (!result.installed) throw new Error(result.reason ?? "aiox-core install failed");
+    });
+  }
+
+  if (shouldRun("env-bootstrap")) {
+    await runStep(stateManager, "env-bootstrap", "Bootstrapping AIOX environment...", async () => {
+      await runEnvironmentBootstrap(targetDir, { skipAiox: false });
+    });
+  }
+
+  await finishInit(name, stateManager);
+}
+
+function i18n_installing(): string {
+  return "Installing dependencies...";
+}
+
+async function finishInit(name: string, stateManager: InitStateManager): Promise<void> {
+  if (stateManager.isComplete()) {
+    await stateManager.cleanup();
+  } else {
+    const resumePoint = stateManager.getResumePoint();
+    console.log(pc.yellow(`\n  ⚠  Setup incomplete (stopped at: ${pc.bold(resumePoint ?? "unknown")})`));
+    console.log(pc.dim(`  Resume with: kaven init ${name} --resume\n`));
+  }
+
   note(
-    `cd ${pc.cyan(name)}\ncp .env.example .env\nnpx prisma migrate dev\npnpm dev`,
+    `cd ${pc.cyan(name)}\ncp .env.example .env\npnpm docker:up\npnpm db:migrate && pnpm db:seed\npnpm dev`,
     "Next Steps"
   );
 
-  outro(pc.cyan(i18n.t("init.outro")));
+  outro(pc.cyan("Project ready. Happy building 🚀"));
 
-  // Save defaults to Global Config
   try {
+    await configManager.initialize();
+    const s = stateManager.getState();
     await configManager.set("projectDefaults", {
-      dbUrl: answers.dbUrl,
-      emailProvider: answers.emailProvider as unknown as "postmark" | "resend" | "ses" | "smtp",
-      locale: answers.locale,
-      currency: answers.currency,
+      dbUrl: s.answers.dbUrl,
+      emailProvider: s.answers.emailProvider as "postmark" | "resend" | "ses" | "smtp",
+      locale: s.answers.locale,
+      currency: s.answers.currency,
     }, "global");
-  } catch (err) {
-    console.warn(pc.dim(`[init] Config save skipped: ${err instanceof Error ? err.message : String(err)}`));
+  } catch {
+    // non-fatal
   }
 }
