@@ -46,8 +46,22 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Setup Node.js (npm auth for dist-tag)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
       - name: Release
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+
+      - name: Promote to latest
+        if: success()
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          npm dist-tag add kaven-cli@$VERSION latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
