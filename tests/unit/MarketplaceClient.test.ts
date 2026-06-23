@@ -312,7 +312,8 @@ describe("MarketplaceClient", () => {
       await customClient.requestDeviceCode();
 
       const calledUrl = (global.fetch as any).mock.calls[0].arguments[0] as string;
-      assert.ok(calledUrl.includes("custom.api.example.com"));
+      const hostname = new URL(calledUrl).hostname;
+      assert.strictEqual(hostname, "custom.api.example.com");
 
       delete process.env.KAVEN_API_URL;
     });
