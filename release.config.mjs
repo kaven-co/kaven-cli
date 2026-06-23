@@ -73,6 +73,14 @@ export default {
       },
     ],
 
+    // 4b. Also promote the just-published version to "latest"
+    [
+      '@semantic-release/exec',
+      {
+        publishCmd: 'npm dist-tag add kaven-cli@${nextRelease.version} latest',
+      },
+    ],
+
     // 5. Commit package.json + CHANGELOG.md back to main
     [
       '@semantic-release/git',
