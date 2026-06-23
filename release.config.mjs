@@ -73,7 +73,16 @@ export default {
       },
     ],
 
-    // 5. Create GitHub release + commit version bump + changelog
+    // 5. Commit package.json + CHANGELOG.md back to main
+    [
+      '@semantic-release/git',
+      {
+        assets: ['package.json', 'pnpm-lock.yaml', 'CHANGELOG.md'],
+        message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
+      },
+    ],
+
+    // 6. Create GitHub release
     [
       '@semantic-release/github',
       {
