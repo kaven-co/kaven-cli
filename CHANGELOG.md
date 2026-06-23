@@ -1,3 +1,10 @@
+## [0.11.1](https://github.com/kaven-co/kaven-cli/compare/v0.11.0...v0.11.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* **release:** publish to [@latest](https://github.com/latest) by removing channel override ([#62](https://github.com/kaven-co/kaven-cli/issues/62)) ([510471c](https://github.com/kaven-co/kaven-cli/commit/510471c0168ae94cd47949bcbbff63dab8f21f50))
+
 # [0.11.0](https://github.com/kaven-co/kaven-cli/compare/v0.10.0...v0.11.0) (2026-06-23)
 
 
