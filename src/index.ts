@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import packageJson from "../package.json" with { type: "json" };
 import { moduleDoctor } from "./commands/module/doctor.js";
 import { moduleAdd } from "./commands/module/add.js";
 import { moduleRemove } from "./commands/module/remove.js";
@@ -33,7 +34,7 @@ export const main = () => {
   program
     .name("kaven")
     .description("The official CLI for the Kaven SaaS boilerplate ecosystem")
-    .version("0.4.2-alpha.0")
+    .version(packageJson.version)
     .addHelpText(
       "after",
       `
