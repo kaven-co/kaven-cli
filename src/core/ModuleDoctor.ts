@@ -421,7 +421,7 @@ export class ModuleDoctor {
 
       // Minimum required semver range
       const MINIMUM_VERSION = "1.0.0";
-      const versionStr = kavenCoreVersion.replace(/[\^~>=<]/, "").split(" ")[0];
+      const versionStr = kavenCoreVersion.replace(/[\^~>=<]/g, "").split(" ")[0];
       const parts = versionStr.split(".").map(Number);
       const minParts = MINIMUM_VERSION.split(".").map(Number);
 
