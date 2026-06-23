@@ -1,3 +1,10 @@
+## [0.11.4](https://github.com/kaven-co/kaven-cli/compare/v0.11.3...v0.11.4) (2026-06-23)
+
+
+### Bug Fixes
+
+* **security:** resolve code-scanning alerts and update env example ([#65](https://github.com/kaven-co/kaven-cli/issues/65)) ([297bf47](https://github.com/kaven-co/kaven-cli/commit/297bf47271a454cea676eac990d03c5be90a091c))
+
 ## [0.11.3](https://github.com/kaven-co/kaven-cli/compare/v0.11.2...v0.11.3) (2026-06-23)
 
 
