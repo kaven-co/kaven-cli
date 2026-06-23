@@ -2,21 +2,17 @@
  * Semantic Release configuration for kaven-cli.
  *
  * Channel strategy:
- *  - main branch → publishes to npm dist-tag "alpha"
- *    (users install with: npm install kaven-cli@alpha)
- *  - When ready to go stable: remove the `channel` property
+ *  - main branch → publishes to npm dist-tag "latest" (default)
+ *  - No channel override: semantic-release defaults to @latest for the main branch
  *
  * Note: `prerelease` flag is intentionally absent.
- * semantic-release v25 requires at least one non-prerelease release branch.
- * Using `channel: 'alpha'` achieves the same distribution goal (alpha dist-tag)
- * without the single-branch limitation. Version numbers are clean semver (e.g. 0.5.0).
+ * Version numbers are clean semver (e.g. 0.12.0).
  */
 
 export default {
   branches: [
     {
       name: 'main',
-      channel: 'alpha',
     },
   ],
 
@@ -64,20 +60,12 @@ export default {
     ],
 
     // 4. Publish to npm (uses OIDC via Trusted Publisher — no token needed)
+    //    Publishes to @latest by default (no channel override)
     [
       '@semantic-release/npm',
       {
         npmPublish: true,
         pkgRoot: '.',
-        // tag is derived from the branch channel above ("alpha")
-      },
-    ],
-
-    // 4b. Also promote the just-published version to "latest"
-    [
-      '@semantic-release/exec',
-      {
-        publishCmd: 'npm dist-tag add kaven-cli@${nextRelease.version} latest',
       },
     ],
 
