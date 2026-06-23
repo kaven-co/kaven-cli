@@ -1,3 +1,10 @@
+## [0.11.3](https://github.com/kaven-co/kaven-cli/compare/v0.11.2...v0.11.3) (2026-06-23)
+
+
+### Bug Fixes
+
+* **security:** patch vulnerable packages and configure overrides ([#64](https://github.com/kaven-co/kaven-cli/issues/64)) ([716e132](https://github.com/kaven-co/kaven-cli/commit/716e132c066e0671870f39b5f15f6cd8a52da14a))
+
 ## [0.11.2](https://github.com/kaven-co/kaven-cli/compare/v0.11.1...v0.11.2) (2026-06-23)
 
 
