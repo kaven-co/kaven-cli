@@ -94,7 +94,7 @@ export class ProjectInitializer {
     const source = templateSource || TEMPLATE_REPO;
     console.log(`[INIT] Clone Source: ${source}`);
     console.log(`[INIT] Target Dir: ${targetDir}`);
-    
+
     // If it's a local path that exists, copy it instead of cloning
     if (await fs.pathExists(source) && (source.startsWith("/") || source.startsWith("./") || source.startsWith("../"))) {
       console.log(`[INIT] Local Path Detected. Copying...`);
@@ -105,11 +105,30 @@ export class ProjectInitializer {
       return;
     }
 
+    // InitStateManager pre-creates targetDir/.kaven before clone runs.
+    // If targetDir exists and only contains .kaven, temporarily move it out
+    // so git clone can create a clean directory, then restore it afterwards.
+    let savedKavenDir: string | null = null;
+    if (await fs.pathExists(targetDir)) {
+      const entries = await fs.readdir(targetDir);
+      if (entries.length === 1 && entries[0] === ".kaven") {
+        savedKavenDir = `${targetDir}__kaven_state_tmp`;
+        await fs.move(path.join(targetDir, ".kaven"), savedKavenDir);
+        await fs.remove(targetDir);
+      }
+    }
+
     const exitCode = await runCommand(
       "git",
       ["clone", "--depth", "1", source, targetDir],
       process.cwd()
     );
+
+    // Always restore .kaven state (even on failure, so resume works)
+    if (savedKavenDir && await fs.pathExists(savedKavenDir)) {
+      await fs.ensureDir(targetDir);
+      await fs.move(savedKavenDir, path.join(targetDir, ".kaven"), { overwrite: true });
+    }
 
     if (exitCode !== 0) {
       throw new Error(`git clone failed with exit code ${exitCode}`);
