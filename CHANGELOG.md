@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/kaven-co/kaven-cli/compare/v0.9.1...v0.10.0) (2026-06-23)
+
+
+### Features
+
+* **release:** add @semantic-release/git to commit version bump back to main ([#58](https://github.com/kaven-co/kaven-cli/issues/58)) ([350f919](https://github.com/kaven-co/kaven-cli/commit/350f919ae926ab5db562e4573dbb8bb84ffac971))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
