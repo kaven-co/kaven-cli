@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/kaven-co/kaven-cli/compare/v0.10.0...v0.11.0) (2026-06-23)
+
+
+### Features
+
+* **release:** auto-promote alpha releases to latest dist-tag ([#60](https://github.com/kaven-co/kaven-cli/issues/60)) ([7e63ca7](https://github.com/kaven-co/kaven-cli/commit/7e63ca7de0c52032097fed1b8b6654075fc36c1f))
+
 # [0.10.0](https://github.com/kaven-co/kaven-cli/compare/v0.9.1...v0.10.0) (2026-06-23)
 
 
