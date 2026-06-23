@@ -1,3 +1,10 @@
+## [0.11.2](https://github.com/kaven-co/kaven-cli/compare/v0.11.1...v0.11.2) (2026-06-23)
+
+
+### Bug Fixes
+
+* **cli:** load version dynamically from package.json ([40f3b1a](https://github.com/kaven-co/kaven-cli/commit/40f3b1a98e473907c52089c6cf7c5b8a1e3bad9a))
+
 ## [0.11.1](https://github.com/kaven-co/kaven-cli/compare/v0.11.0...v0.11.1) (2026-06-23)
 
 
